@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'cors-header',
+    'corsheaders',
     'users',
 ]
 
@@ -39,13 +39,17 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
 ]
 
 CORS_ALLOW_ALL_OR_WHITELIST = [
     'http://localhost:5173',
 ]
 
-ROOT_URLCONF = 'autocareservice.urls'
+AUTH_USER_MODEL = 'users.CustomUser'
+
+ROOT_URLCONF = 'users.urls'
 
 TEMPLATES = [
     {
