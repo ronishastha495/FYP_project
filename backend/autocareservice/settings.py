@@ -19,6 +19,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+     'users',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -27,7 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'users',
+   
 ]
 
 MIDDLEWARE = [
@@ -39,8 +40,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
 ]
 
 CORS_ALLOW_ALL_OR_WHITELIST = [
@@ -78,9 +77,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'autocare_service',  # The name of your MySQL database
         'USER': 'root',     # Your MySQL username
-        'PASSWORD': 'J@81Gi_e#',  # Your MySQL password
+        'PASSWORD': 'F$sORq_#',  # Your MySQL password
         'HOST': 'localhost',           # Typically 'localhost' or your MySQL server IP
-        'PORT': '3306',                # MySQL default port
+        'PORT': '3307',                # MySQL default port
     }
 }
 
