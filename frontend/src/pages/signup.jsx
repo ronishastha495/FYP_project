@@ -1,77 +1,109 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import backgroundImage from '../assets/background.jpg'; 
 
-const RegistrationPage = () => {
+const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 bg-[url('https://images.unsplash.com/photo-1587136574598-817d05011c34')] bg-cover bg-center">
-      <div className="bg-white/80 backdrop-blur-sm p-8 rounded-lg shadow-xl w-96">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Create Account</h2>
-        <p className="text-center text-gray-600 mb-6">Join our community today</p>
-        
-        <form className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+    <div className="min-h-screen w-full flex items-center justify-center">
+      <div
+        className="relative min-h-screen w-full bg-cover bg-center flex items-center justify-center"
+        style={{
+          backgroundImage: `url(${backgroundImage})`, // Use the imported image here
+          backgroundBlendMode: 'overlay',
+          backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        <div className="bg-white/95 backdrop-blur-sm p-8 rounded-xl shadow-lg w-full max-w-md mx-4">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-1 text-center">
+            Create Account
+          </h2>
+          <p className="text-gray-500 text-sm text-center mb-6">
+            Join our community today
+          </p>
+          
+          <form className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="John"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Doe"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+            </div>
+            
             <div>
-              <label className="block text-sm font-medium text-gray-700">First Name</label>
+              <label className="block text-sm text-gray-600 mb-1">
+                Email Address
+              </label>
               <input
-                type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                placeholder="John"
+                type="email"
+                placeholder="john@example.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
               />
             </div>
+            
             <div>
-              <label className="block text-sm font-medium text-gray-700">Last Name</label>
-              <input
-                type="text"
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                placeholder="Doe"
-              />
+              <label className="block text-sm text-gray-600 mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email Address</label>
-            <input
-              type="email"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-              placeholder="john@example.com"
-            />
-          </div>
-          
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <input
-              type={showPassword ? "text" : "password"}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 pr-10"
-              placeholder="••••••••"
-            />
+            
             <button
-              type="button"
-              className="absolute right-3 top-8 text-gray-500 hover:text-gray-700"
-              onClick={() => setShowPassword(!showPassword)}
+              type="submit"
+              style={{
+                background: 'linear-gradient(to right, #E8B65A, #524CAD)'
+              }}
+              className="w-full py-2.5 text-white rounded-lg mt-6 hover:opacity-95 transition-opacity"
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              Sign Up
             </button>
-          </div>
+          </form>
           
-          <button
-            type="submit"
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-yellow-500 to-purple-600 hover:from-yellow-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-          >
-            Sign Up
-          </button>
-        </form>
-        
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <a href="#" className="font-medium text-purple-600 hover:text-purple-500">
-            Sign in
-          </a>
-        </p>
+          <p className="mt-4 text-center text-sm text-gray-600">
+            Already have an account?{' '}
+            <a href="#" className="text-amber-500 hover:text-amber-600">
+              Sign in
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
 };
 
-export default RegistrationPage;
+export default SignupForm;

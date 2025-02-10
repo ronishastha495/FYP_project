@@ -1,3 +1,4 @@
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -8,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-g)(@k1#hp8jxod=i_aa1@!gbcw(9ztagww*ym(xt677w(d7z1h'
+SECRET_KEY = 'django-insecure-ac&6&%501p*wy=-5dnzxc11mk&(0tf%=3z*c#+_xdmcv!or6x*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -19,7 +20,6 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-     'users',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -28,7 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-   
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -42,13 +42,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_OR_WHITELIST = [
-    'http://localhost:5173',
+CORS_ALLOWED_ORIGINS =[
+    "http://localhost:5173"
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-ROOT_URLCONF = 'users.urls'
+ROOT_URLCONF = 'auth.urls'
 
 TEMPLATES = [
     {
@@ -66,7 +66,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'autocareservice.wsgi.application'
+WSGI_APPLICATION = 'auth.wsgi.application'
 
 
 # Database
@@ -75,11 +75,11 @@ WSGI_APPLICATION = 'autocareservice.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'autocare_service',  # The name of your MySQL database
-        'USER': 'root',     # Your MySQL username
-        'PASSWORD': 'F$sORq_#',  # Your MySQL password
-        'HOST': 'localhost',           # Typically 'localhost' or your MySQL server IP
-        'PORT': '3307',                # MySQL default port
+        'NAME': 'autocare_service',  # Replace with your database name
+        'USER': 'root',  # Replace with your database username
+        'PASSWORD': 'H$ky#9F2w1!j',  # Replace with your database password
+        'HOST': 'localhost',  # Typically 'localhost' or an IP address
+        'PORT': '3306',  # Typically 3306 for MySQL
     }
 }
 
