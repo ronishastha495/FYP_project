@@ -44,8 +44,8 @@ MIDDLEWARE = [
 ]
 
 REST_FRAMEWORk = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt_authentication.JWTAuthentication',
+    'DEFAULT_AUTHENTICATION_CLASSES': (   'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'users.authentication.CookiesJWTAuthentication',
     ),
      'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated'
