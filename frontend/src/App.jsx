@@ -3,7 +3,7 @@ import './App.css';
 import Landing from './pages/landing.jsx'; // Example: Import a home page component?
 import NotFound from './pages/not_found'; // Example: A 404 error page component
 import SignupForm from './pages/signup.jsx';
-// import LoginPage from './pages/login';
+import Login from './routes/login';
 
 
 function App() {
@@ -13,7 +13,7 @@ function App() {
         {/* Define routes for your pages */}
         <Route path="/" element={<Landing />} />
         <Route path="/signup" element={<SignupForm/>} />
-        {/* <Route path="/login" element={<LoginPage/>} /> */}
+        <Route path="/login" element={<Login/>} />
         <Route path="*" element={<NotFound />} /> {/* Catch-all route for undefined pages */}
       </Routes>
     </Router>
