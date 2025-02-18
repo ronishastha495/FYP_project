@@ -29,7 +29,7 @@ const Login = () => {
       >
         <div className="bg-white/95 backdrop-blur-sm p-8 rounded-xl shadow-lg w-full max-w-md mx-4">
           <h2 className="text-2xl font-semibold text-gray-800 mb-1 text-center">
-            Welcome Back
+           
           </h2>
           <p className="text-gray-500 text-sm text-center mb-6">
             Login to your account

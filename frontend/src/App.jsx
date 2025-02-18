@@ -1,22 +1,19 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import './App.css';
-import Landing from './pages/landing.jsx'; // Example: Import a home page component?
-import NotFound from './pages/not_found'; // Example: A 404 error page component
-import SignupForm from './pages/signup.jsx';
-import Login from './routes/login';
+import { Routes, Route } from "react-router-dom";
+import "./App.css";
+import Landing from "./pages/landing.jsx"; 
+import NotFound from "./pages/not_found"; 
+import SignupForm from "./pages/signup.jsx";
+import Login from "./routes/login.jsx";
 
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Define routes for your pages */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/signup" element={<SignupForm/>} />
-        <Route path="/login" element={<Login/>} />
-        <Route path="*" element={<NotFound />} /> {/* Catch-all route for undefined pages */}
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/signup" element={<SignupForm />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 
