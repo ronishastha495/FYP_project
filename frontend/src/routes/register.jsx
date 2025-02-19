@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-// import { login } from "../endpoints/api.js";
 import backgroundImage from '../assets/background.jpg';
 import { useAuth } from '../contexts/useAuth';
 
@@ -10,12 +9,20 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [Cpassword, setCPassword] = useState("");
-  // const [error, setError] = useState(""); // New state to store login errors
+  const [error, setError] = useState(""); // ✅ Added missing state for error handling
   const { register_user } = useAuth();
 
-  const handleRegister = () => {
+  const handleRegister = (event) => {
+    event.preventDefault(); // ✅ Prevent form from refreshing the page
+
+    if (password !== Cpassword) {
+      setError("Passwords do not match!");
+      return;
+    }
+
     register_user(username, email, password, Cpassword)
-  }
+      .catch((err) => setError(err.message)); // ✅ Handle registration errors
+  };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center">
@@ -29,15 +36,13 @@ const Register = () => {
       >
         <div className="bg-white/95 backdrop-blur-sm p-8 rounded-xl shadow-lg w-full max-w-md mx-4">
           <h2 className="text-2xl font-semibold text-gray-800 mb-1 text-center">
-           Create an account to Register
+            Create an account to Register
           </h2>
-          {/* <p className="text-gray-500 text-sm text-center mb-6">
-            Login to your account
-          </p> */}
 
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>} {/* Show error */}
+          {/* ✅ Display error if exists */}
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-          <form className="space-y-4" onSubmit={handleLogin}>
+          <form className="space-y-4" onSubmit={handleRegister}>
             <div>
               <label htmlFor="username" className="block text-sm text-gray-600 mb-1">
                 Username
@@ -54,12 +59,12 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="username" className="block text-sm text-gray-600 mb-1">
+              <label htmlFor="email" className="block text-sm text-gray-600 mb-1">
                 Email
               </label>
               <input
                 id="email"
-                type="text"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
@@ -93,13 +98,13 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm text-gray-600 mb-1">
+              <label htmlFor="Cpassword" className="block text-sm text-gray-600 mb-1">
                 Confirm Password
               </label>
               <div className="relative">
                 <input
                   id="Cpassword"
-                  type={showPassword ? "text" : "Cpassword"}
+                  type={showPassword ? "text" : "password"} // ✅ Fixed input type
                   value={Cpassword}
                   onChange={(e) => setCPassword(e.target.value)}
                   placeholder="••••••••"
@@ -119,18 +124,18 @@ const Register = () => {
             <button
               type="submit"
               style={{
-                background: 'linear-gradient(to right, #E8B65A, #524CAD)'
+                background: 'linear-gradient(to right, #E8B65A, #524CAD)',
               }}
               className="w-full py-2.5 text-white rounded-lg mt-6 hover:opacity-95 transition-opacity"
-            onClick={handleRegister}>
-              Login
+            >
+              Register {/* ✅ Changed button text */}
             </button>
           </form>
 
           <p className="mt-4 text-center text-sm text-gray-600">
-            Don't have an account?{' '}
-            <a href="/signup" className="text-amber-500 hover:text-amber-600">
-              Sign up
+            Already have an account?{' '}
+            <a href="/login" className="text-amber-500 hover:text-amber-600">
+              Log in
             </a>
           </p>
         </div>

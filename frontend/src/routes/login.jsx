@@ -1,26 +1,29 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-// import { login } from "../endpoints/api.js";
 import backgroundImage from '../assets/background.jpg';
 import { useAuth } from "../contexts/useAuth";
 import { useNavigate } from 'react-router-dom';
-
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const nav = useNavigate()
-  // const [error, setError] = useState(""); // New state to store login errors
+  const [error, setError] = useState(""); // Fix: Define the error state
+  const nav = useNavigate();
   const { login_user } = useAuth();
 
-  const handleLogin = () => {
-    login_user(username, password)
-  }
+  const handleLogin = (e) => {
+    e.preventDefault(); // Fix: Prevent form submission from refreshing the page
+    // Try login
+    login_user(username, password).catch((err) => {
+      setError("Login failed. Please try again.");
+    });
+  };
 
   const handleNav = () => {
-    nav('/register')
-  }
+    nav('/register');
+  };
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center">
       <div
