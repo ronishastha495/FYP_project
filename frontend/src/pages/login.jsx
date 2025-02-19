@@ -8,7 +8,7 @@
 //   return (
 //     <div className="min-h-screen w-full flex items-center  bg-gray-100">
 //       <div 
-//         className="relative min-h-screen w-full bg-cover bg-center flex items-center justify-center"
+//         classN ame="relative min-h-screen w-full bg-cover bg-center flex items-center justify-center"
 //         style={{
 //           backgroundImage: `url(${bgImage})`,
 //           backgroundBlendMode: 'overlay',
