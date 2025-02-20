@@ -1,102 +1,99 @@
 import axios from 'axios';
 
+// Base URL and API endpoints
 const BASE_URL = 'http://127.0.0.1:8000/api/';
 const LOGIN_URL = `${BASE_URL}token/`;
-const REFRESH_URL = `${BASE_URL}token/refresh/`
-const APPOINTMENTS_URL = `${BASE_URL}appointments/`
-const LOGOUT_URL = `${BASE_URL}logout/`
-const AUTH_URL = `${BASE_URL}authenticated/`
-const REGISTER_URL = `${BASE_URL}register/`
+const REFRESH_URL = `${BASE_URL}token/refresh/`;
+const APPOINTMENTS_URL = `${BASE_URL}appointments/`;
+const LOGOUT_URL = `${BASE_URL}logout/`;
+const AUTH_URL = `${BASE_URL}authenticated/`;
+const REGISTER_URL = `${BASE_URL}register/`;
 
-
-
+/**
+ * Handles user login and returns success status.
+ */
 export const login = async (username, password) => {
-    const response = await axios.post(LOGIN_URL,
-        {username: username, password: password},
-        {withCredentials: true}
-    )
-    return response.data.success
-}
-//   try {
-//     const response = await axios.post(
-//       LOGIN_URL,
-//       { username, password },
-//       { withCredentials: true }
-//     );
+    const response = await axios.post(
+        LOGIN_URL,
+        { username, password },
+        { withCredentials: true }
+    );
+    return response.data.success;
+};
 
-//     if (response.status === 200) {
-//       const token = response.data.access; // Assuming the response contains an 'access' token
-//       return token; // Return the token
-//     } else {
-//       return null; // Login failed
-//     }
-//   } catch (error) {
-//     console.error("Login Error:", error.response?.data || error.message);
-//     return null; // Handle login failure
-//   }
-// };
-
+/**
+ * Refreshes the authentication token if expired.
+ */
 export const refresh_token = async () => {
-    try{
-        await axios.post(REFRESH_URL,
-        {},
-        {withCredentials: true }
-    )
-    return true
+    try {
+        await axios.post(REFRESH_URL, {}, { withCredentials: true });
+        return true;
     } catch (error) {
-        return false
+        return false;
     }
-}
+};
 
+/**
+ * Fetches a list of user appointments.
+ * If unauthorized (401), tries to refresh the token and retry.
+ */
 export const get_appointments = async () => {
-    try{
-        const response = await axios.get(APPOINTMENTS_URL,
-            {withCredentials: true } 
-        ) 
-        return response.data
+    try {
+        const response = await axios.get(APPOINTMENTS_URL, { withCredentials: true });
+        return response.data;
     } catch (error) {
-        return call_refresh(error, axios.get(APPOINTMENTS_URL, { withCredentials: true} ) )
+        return call_refresh(error, () =>
+            axios.get(APPOINTMENTS_URL, { withCredentials: true })
+        );
     }
- 
-}
+};
 
-const call_refresh = async (error) => {
-    if(error.response && error.response.status === 401) {
+/**
+ * Handles token expiration by refreshing and retrying failed requests.
+ */
+const call_refresh = async (error, func) => {
+    if (error.response && error.response.status === 401) {
         const tokenRefreshed = await refresh_token();
         if (tokenRefreshed) {
             const retryResponse = await func();
-            return retryResponse.data
+            return retryResponse.data;
         }
     }
-    return false
-}
+    return false;
+};
 
-
+/**
+ * Logs out the authenticated user.
+ */
 export const logout = async () => {
-    try{
-        await axios.post(LOGOUT_URL,
-            {},
-            { withCredentials: true }
-        )
-        return true
+    try {
+        await axios.post(LOGOUT_URL, {}, { withCredentials: true });
+        return true;
     } catch (error) {
-        return false
+        return false;
     }
-}
+};
 
+/**
+ * Checks if the user is authenticated.
+ */
 export const is_authenticated = async () => {
- try {
-    await axios.post(AUTH_URL, {}, { withCredentials: true })
-    return true
- }   catch (error) {
-    return false
- }
-}
+    try {
+        await axios.post(AUTH_URL, {}, { withCredentials: true });
+        return true;
+    } catch (error) {
+        return false;
+    }
+};
 
+/**
+ * Registers a new user.
+ */
 export const register = async (username, email, password) => {
-    const response = axios .post(REGISTER_URL,
-        {username:username, email:email, password:password}, 
-        {withCredentials: true}
-    )
-    return response.data
-}
+    const response = await axios.post(
+        REGISTER_URL,
+        { username, email, password },
+        { withCredentials: true }
+    );
+    return response.data;
+};
