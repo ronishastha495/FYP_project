@@ -100,7 +100,8 @@ def register(request):
     serializer = UserRegistrationSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
-        return Response(serializer.error)
+        return Response({'success': True, 'data': serializer.data}, status=201)
+    return Response({'success': False, 'errors': serializer.errors}, status=400)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
