@@ -1,5 +1,14 @@
 
 from pathlib import Path
+from django.contrib.messages import constants as messages
+
+MESSAGE_TAGS = {
+    messages.DEBUG: 'alert-info',  # Custom class for debug messages
+    messages.INFO: 'alert-info',    # Bootstrap info color
+    messages.SUCCESS: 'alert-success',  # Bootstrap success color
+    messages.WARNING: 'alert-warning',  # Bootstrap warning color
+    messages.ERROR: 'alert-danger',  # Bootstrap danger color
+}
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,6 +29,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'channels' ,
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -30,7 +41,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'users', 
-    'autocare' 
+    'autocare',
+    'chat.apps.ChatConfig',
 ]
 
 MIDDLEWARE = [
@@ -152,3 +164,11 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+ASGI_APPLICATION = 'auth.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
