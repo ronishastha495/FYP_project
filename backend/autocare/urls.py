@@ -1,8 +1,29 @@
 from django.urls import path
-from . import views
+from .views import (
+    VehicleListCreateView,
+    VehicleDetailView,
+    ServiceHistoryListCreateView,
+    ServiceHistoryDetailView,
+    BookingListCreateView,
+    BookingDetailView,
+    ReminderListCreateView,
+    ReminderDetailView,
+)
 
 urlpatterns = [
-    path('dashboard/', views.dashboard, name='dashboard'),
-    path('search-services/', views.search_services, name='search_services'),
-    path('add-booking/', views.add_booking, name='add_booking'),
+    # Vehicle URLs
+    path('vehicles/', VehicleListCreateView.as_view(), name='vehicle-list-create'),
+    path('vehicles/<int:pk>/', VehicleDetailView.as_view(), name='vehicle-detail'),
+
+    # Service History URLs
+    path('service-history/', ServiceHistoryListCreateView.as_view(), name='service-history-list-create'),
+    path('service-history/<int:pk>/', ServiceHistoryDetailView.as_view(), name='service-history-detail'),
+
+    # Booking URLs
+    path('bookings/', BookingListCreateView.as_view(), name='booking-list-create'),
+    path('bookings/<int:pk>/', BookingDetailView.as_view(), name='booking-detail'),
+
+    # Reminder URLs
+    path('reminders/', ReminderListCreateView.as_view(), name='reminder-list-create'),
+    path('reminders/<int:pk>/', ReminderDetailView.as_view(), name='reminder-detail'),
 ]

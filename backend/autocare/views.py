@@ -1,38 +1,89 @@
-from django.shortcuts import render
-from django.http import JsonResponse
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.models import User
 from .models import Vehicle, ServiceHistory, Booking, Reminder
-from django.contrib.auth.decorators import login_required
+from .serializers import (
+    VehicleSerializer,
+    ServiceHistorySerializer,
+    BookingSerializer,
+    ReminderSerializer,
+)
+
+# Vehicle Views
+class VehicleListCreateView(generics.ListCreateAPIView):
+    serializer_class = VehicleSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Vehicle.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
-# Create your views here.
-# User Dashboard
-@login_required
-def dashboard(request):
-    vehicles = Vehicle.objects.filter(user=request.user)
-    service_history = ServiceHistory.objects.filter(vehicle__user=request.user)
-    return render(request, 'dashboard.html', {
-        'vehicles': vehicles,
-        'service_history': service_history,
-    })
+class VehicleDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = VehicleSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-# Search Services
-@login_required
-def search_services(request):
-    query = request.GET.get('query', '')
-    services = ServiceHistory.objects.filter(service_type__icontains=query)
-    results = [{'service_type': s.service_type, 'cost': s.cost} for s in services]
-    return JsonResponse(results, safe=False)
+    def get_queryset(self):
+        return Vehicle.objects.filter(user=self.request.user)
 
-# Add Booking
-@login_required
-def add_booking(request):
-    if request.method == 'POST':
-        vehicle_id = request.POST.get('vehicle_id')
-        service = request.POST.get('service')
-        date = request.POST.get('date')
-        time = request.POST.get('time')
-        vehicle = Vehicle.objects.get(id=vehicle_id)
-        booking = Booking(user=request.user, vehicle=vehicle, service=service, date=date, time=time)
-        booking.save()
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error'}, status=400)
+
+# Service History Views
+class ServiceHistoryListCreateView(generics.ListCreateAPIView):
+    serializer_class = ServiceHistorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return ServiceHistory.objects.filter(vehicle__user=self.request.user)
+
+
+class ServiceHistoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ServiceHistorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return ServiceHistory.objects.filter(vehicle__user=self.request.user)
+
+
+# Booking Views
+class BookingListCreateView(generics.ListCreateAPIView):
+    serializer_class = BookingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Booking.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = BookingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Booking.objects.filter(user=self.request.user)
+
+
+# Reminder Views
+class ReminderListCreateView(generics.ListCreateAPIView):
+    serializer_class = ReminderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Reminder.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class ReminderDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ReminderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Reminder.objects.filter(user=self.request.user)

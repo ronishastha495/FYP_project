@@ -1,8 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User 
-from .models import Appointment
-from .serializer import AppointmentSerializer, UserRegistrationSerializer
-
+from .serializer import UserRegistrationSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -10,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
+   
 )
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
@@ -79,20 +79,36 @@ class CustomRefreshTokenView(TokenRefreshView):
             return Response({'refreshed': False})
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def logout(request):
     try:
-        res = Response()
-        res.data = {'success': True}
-        res.delete_cookie('access_token', path='/', samesite='None')
-        res.delete_cookie('refresh_token', path='/', samesite='None')
-        return res
-    except:
-        return Response({'success': False})
+        refresh_token = request.data.get("refresh_token")
+        if not refresh_token:
+            return Response({"error": "Refresh token is required"}, status=400)
 
-@api_view(['POST'])
+        token = RefreshToken(refresh_token)
+        token.blacklist()  # Blacklist the refresh token
+
+        return Response({"message": "Logged out successfully"}, status=200)
+    except Exception as e:
+        return Response({"error": str(e)}, status=400)
+    try:
+        refresh_token = request.data.get("refresh_token")
+        if not refresh_token:
+            return Response({"error": "Refresh token is required"}, status=400)
+
+        token = RefreshToken(refresh_token)
+        token.blacklist()  # Blacklist the refresh token
+
+        return Response({"message": "Logged out successfully"}, status=200)
+    except Exception as e:
+        return Response({"error": str(e)}, status=400)
+
+# views.py
+@api_view(['GET'])  # Change to GET
 @permission_classes([IsAuthenticated])
 def is_authenticated(request):
-    return Response({'authenticated': True})
+    return Response({"authenticated": True}, status=200)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -102,17 +118,3 @@ def register(request):
         serializer.save()
         return Response({'success': True, 'data': serializer.data}, status=201)
     return Response({'success': False, 'errors': serializer.errors}, status=400)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_appointments(request):
-    print(f"Authenticated User: {request.user}")  # Debugging
-    user = request.user
-    if user.is_anonymous:
-        return Response({"error": "User not authenticated"}, status=403)
-    appointments = Appointment.objects.filter(customer=user)
-    serializer = AppointmentSerializer(appointments, many=True)
-    return Response(serializer.data)
-
-
-# Create your views here.

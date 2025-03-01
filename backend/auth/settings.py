@@ -50,13 +50,23 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS= True
 
-REST_FRAMEWORk = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (   'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'users.authentication.CookiesJWTAuthentication',
-    ),
-     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated'
-    ]
+# REST_FRAMEWORk = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': (   'rest_framework_simplejwt.authentication.JWTAuthentication',
+#         'users.authentication.CookiesJWTAuthentication',
+#     ),
+#      'DEFAULT_PERMISSION_CLASSES': [
+#         'rest_framework.permissions.IsAuthenticated'
+#     ]
+# }
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
 }
 
 CORS_ALLOWED_ORIGINS =[

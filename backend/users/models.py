@@ -4,9 +4,9 @@ from django.contrib.auth.models import User
 # customer = models.ForeignKey(settings.AUTH_USER_MODEL, ...)
 
 
-class Appointment(models.Model):
-    description =  models.CharField(max_length=255)
-    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments') 
+# class Appointment(models.Model):
+#     description =  models.CharField(max_length=255)
+#     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appointments') 
 
 # from django.contrib.auth.base_user import BaseUserManager
 # from django.contrib.auth.models import AbstractUser     

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base URL and API endpoints
-const BASE_URL = 'http://127.0.0.1:8000/api/';
+const BASE_URL = 'http://127.0.0.1:8000/users/';
 const LOGIN_URL = `${BASE_URL}token/`;
 const REFRESH_URL = `${BASE_URL}token/refresh/`;
 const APPOINTMENTS_URL = `${BASE_URL}appointments/`;
@@ -36,7 +36,7 @@ export const refresh_token = async () => {
 /**
  * Fetches a list of user appointments.
  * If unauthorized (401), tries to refresh the token and retry.
- */
+//  */
 export const get_appointments = async () => {
     try {
         const response = await axios.get(APPOINTMENTS_URL, { withCredentials: true });
@@ -67,28 +67,37 @@ const call_refresh = async (error, func) => {
  */
 export const logout = async () => {
     try {
-        await axios.post(LOGOUT_URL, {}, { withCredentials: true });
+        const refreshToken = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('refresh_token='))
+            ?.split('=')[1];
+
+        await axios.post(LOGOUT_URL, { refresh_token: refreshToken }, {  // Send refresh_token
+            withCredentials: true,
+        });
         return true;
     } catch (error) {
         return false;
     }
 };
 
-/**
- * Checks if the user is authenticated.
- */
 export const is_authenticated = async () => {
     try {
-        await axios.post(AUTH_URL, {}, { withCredentials: true });
+        const accessToken = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('access_token='))
+            ?.split('=')[1];
+
+        await axios.get(AUTH_URL, {  // Change to GET
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
         return true;
     } catch (error) {
         return false;
     }
 };
 
-/**
- * Registers a new user.
- */
 export const register = async (username, email, password) => {
     const response = await axios.post(
         REGISTER_URL,
