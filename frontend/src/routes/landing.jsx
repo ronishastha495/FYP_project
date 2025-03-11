@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Star,} from 'lucide-react';
 import { get_appointments, logout } from "../endpoints/api";
 import carImage from "../assets/car1.webp";
+// landing.jsx
 
 
 

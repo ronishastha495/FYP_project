@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import backgroundImage from "../assets/background.jpg";
 import { useAuth } from "../contexts/useAuth";
+import ForgotPassword from "../components/forgetpassword";
+import ChangePassword from "../components/changepassword";
+import ResetPassword from "../components/resetpassword";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
@@ -138,6 +141,9 @@ const Login = () => {
               Sign up
             </a>
           </p>
+          <p className="mt-4 text-center text-sm text-gray-600">
+  Forgot your password? <a href="/forgotpassword" className="text-amber-500 hover:text-amber-600">Reset it here</a>
+</p>
         </div>
       </div>
     </div>

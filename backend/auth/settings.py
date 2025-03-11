@@ -1,6 +1,9 @@
 
 from pathlib import Path
 from django.contrib.messages import constants as messages
+from datetime import timedelta
+from django.conf import settings
+
 
 MESSAGE_TAGS = {
     messages.DEBUG: 'alert-info',  # Custom class for debug messages
@@ -62,30 +65,24 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS= True
 
-# REST_FRAMEWORk = {
-#     'DEFAULT_AUTHENTICATION_CLASSES': (   'rest_framework_simplejwt.authentication.JWTAuthentication',
-#         'users.authentication.CookiesJWTAuthentication',
-#     ),
-#      'DEFAULT_PERMISSION_CLASSES': [
-#         'rest_framework.permissions.IsAuthenticated'
-#     ]
-# }
-
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-    ],
+REST_FRAMEWORk = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (   'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
 }
 
+ 
 CORS_ALLOWED_ORIGINS =[
     "http://localhost:5173"
 ]
 
-# AUTH_USER_MODEL = 'users.CustomUser'
+# Allow Authorization header for frontend
+CORS_ALLOW_HEADERS = [
+    "authorization",
+    "content-type",
+    "accept",
+]
+
+# AUTH_USER_MODEL = 'users.User'
 
 ROOT_URLCONF = 'auth.urls'
 
@@ -122,8 +119,6 @@ DATABASES = {
     }
 }
 
-
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -142,7 +137,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -153,7 +147,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/

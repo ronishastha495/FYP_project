@@ -9,29 +9,56 @@ const LOGOUT_URL = `${BASE_URL}logout/`;
 const AUTH_URL = `${BASE_URL}authenticated/`;
 const REGISTER_URL = `${BASE_URL}register/`;
 
+
 /**
  * Handles user login and returns success status.
  */
 export const login = async (username, password) => {
     const response = await axios.post(
-        LOGIN_URL,
+        `${BASE_URL}token/`,
         { username, password },
         { withCredentials: true }
     );
     return response.data.success;
 };
 
+export const forgotPassword = async (email) => {
+    return await axios.post(`${BASE_URL}reset-password/`, { email });
+  };
+  
+  export const resetPassword = async (token, newPassword) => {
+    return await axios.post(`${BASE_URL}reset-password/${token}/`, { new_password: newPassword });
+  };
+  
+  export const changePassword = async (oldPassword, newPassword) => {
+    return await axios.post(`${BASE_URL}change-password/`, { 
+      old_password: oldPassword, 
+      new_password: newPassword 
+    }, {
+      withCredentials: true
+    });
+  };
+
 /**
  * Refreshes the authentication token if expired.
  */
+// api.js
 export const refresh_token = async () => {
     try {
-        await axios.post(REFRESH_URL, {}, { withCredentials: true });
-        return true;
+      const refreshToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('refresh_token='))
+        ?.split('=')[1];
+  
+      await axios.post('http://127.0.0.1:8000/users/token/refresh/', { refresh: refreshToken }, {
+        withCredentials: true,
+      });
+      return true;
     } catch (error) {
-        return false;
+      return false;
     }
-};
+  };
+  
 
 /**
  * Fetches a list of user appointments.
@@ -39,65 +66,55 @@ export const refresh_token = async () => {
 //  */
 export const get_appointments = async () => {
     try {
-        const response = await axios.get(APPOINTMENTS_URL, { withCredentials: true });
-        return response.data;
+      const response = await axios.get('http://127.0.0.1:8000/users/appointments/', { withCredentials: true });
+      return response.data;
     } catch (error) {
-        return call_refresh(error, () =>
-            axios.get(APPOINTMENTS_URL, { withCredentials: true })
-        );
+      return call_refresh(error, () =>
+        axios.get('http://127.0.0.1:8000/users/appointments/', { withCredentials: true })
+      );
     }
-};
+  };
 
 /**
  * Handles token expiration by refreshing and retrying failed requests.
  */
 const call_refresh = async (error, func) => {
     if (error.response && error.response.status === 401) {
-        const tokenRefreshed = await refresh_token();
-        if (tokenRefreshed) {
-            const retryResponse = await func();
-            return retryResponse.data;
-        }
+      const tokenRefreshed = await refresh_token();
+      if (tokenRefreshed) {
+        const retryResponse = await func();
+        return retryResponse.data;
+      }
     }
     return false;
-};
+  };
+  
 
-/**
- * Logs out the authenticated user.
- */
-export const logout = async () => {
-    try {
-        const refreshToken = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('refresh_token='))
-            ?.split('=')[1];
-
-        await axios.post(LOGOUT_URL, { refresh_token: refreshToken }, {  // Send refresh_token
-            withCredentials: true,
-        });
-        return true;
-    } catch (error) {
-        return false;
-    }
-};
-
+// api.js
 export const is_authenticated = async () => {
-    try {
-        const accessToken = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('access_token='))
-            ?.split('=')[1];
+    const token = localStorage.getItem("token");
+    console.log("Token being sent:", token);  // ✅ Debugging log
 
-        await axios.get(AUTH_URL, {  // Change to GET
-            withCredentials: true,
-            headers: { Authorization: `Bearer ${accessToken}` }
+    if (!token) {
+        return false; // No token means user is not logged in
+    }
+
+    try {
+        const response = await axios.get(`${API_URL}users/authenticated/`, {
+            headers: {
+                Authorization: `Bearer ${token}`,  // ✅ Token must be included
+            },
         });
-        return true;
+        console.log("Authentication success:", response.data);
+        return response.data;
     } catch (error) {
+        console.error("Authentication check failed:", error.response);
         return false;
     }
 };
 
+  
+  
 export const register = async (username, email, password) => {
     const response = await axios.post(
         REGISTER_URL,
@@ -106,3 +123,19 @@ export const register = async (username, email, password) => {
     );
     return response.data;
 };
+
+// api.js
+export const logout = async () => {
+    try {
+      const refreshToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('refresh_token='))
+        ?.split('=')[1];
+  
+      await axios.post(LOGOUT_URL, { refresh_token: refreshToken }, { withCredentials: true });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+  

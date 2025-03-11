@@ -6,8 +6,8 @@ import Register from "./routes/register.jsx";
 import Landing from "./routes/landing.jsx";
 import PrivateRoute from "./components/private_routes.jsx";
 import { AuthProvider } from "./contexts/useAuth";
-import ForgotPassword from "./components/ForgetPassword.jsx";
-import VehicleList from "./components/VehicleList.jsx";
+// import ForgotPassword from "./components/ForgetPassword.jsx";
+// import VehicleList from "./components/VehicleList.jsx";
 import ServicePage from "./pages/appointment.jsx";
 import UserDashboard from "./pages/userdash.jsx";
 
@@ -21,8 +21,8 @@ function App() {
                 <Route path="/appointment" element={<ServicePage />} />
                 <Route path="/appointment" element={<UserDashboard />} />
 
-                <Route path="/forgot-password" element={<ForgotPassword />} /> 
-                <Route path="/" element={<VehicleList />} />
+                {/* <Route path="/forgot-password" element={<ForgotPassword />} /> 
+                <Route path="/" element={<VehicleList />} /> */}
                 <Route
                     path="/menu"
                     element={

@@ -9,8 +9,13 @@ from .views import (
     ReminderListCreateView,
     ReminderDetailView,
 )
+from rest_framework_simplejwt.views import (TokenObtainPairView, TokenRefreshView, )
 
 urlpatterns = [
+
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
     # Vehicle URLs
     path('vehicles/', VehicleListCreateView.as_view(), name='vehicle-list-create'),
     path('vehicles/<int:pk>/', VehicleDetailView.as_view(), name='vehicle-detail'),
@@ -27,3 +32,4 @@ urlpatterns = [
     path('reminders/', ReminderListCreateView.as_view(), name='reminder-list-create'),
     path('reminders/<int:pk>/', ReminderDetailView.as_view(), name='reminder-detail'),
 ]
+
