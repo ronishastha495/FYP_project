@@ -1,9 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 # Vehicle Model
 class Vehicle(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Link to the user
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Link to the user
     make = models.CharField(max_length=100)  # Vehicle make (e.g., Toyota)
     model = models.CharField(max_length=100)  # Vehicle model (e.g., Corolla)
     year = models.IntegerField()  # Manufacturing year
@@ -25,7 +25,7 @@ class ServiceHistory(models.Model):
 
 # Booking Model
 class Booking(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Link to the user
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Link to the user
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)  # Link to the vehicle
     service = models.CharField(max_length=200)  # Service type
     date = models.DateField()  # Booking date
@@ -36,7 +36,7 @@ class Booking(models.Model):
 
 # Reminder Model
 class Reminder(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Link to the user
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Link to the user
     message = models.TextField()  # Reminder message
     date = models.DateField()  # Reminder date
     time = models.TimeField()  # Reminder time

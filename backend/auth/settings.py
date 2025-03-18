@@ -43,9 +43,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    'users', 
+    # 'users', 
     'autocare',
     'chat.apps.ChatConfig',
+    'account'
 ]
 
 MIDDLEWARE = [
@@ -83,6 +84,7 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'account.User'
 
 ROOT_URLCONF = 'auth.urls'
 
