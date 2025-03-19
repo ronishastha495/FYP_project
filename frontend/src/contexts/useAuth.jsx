@@ -1,54 +1,59 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { is_authenticated, login, register } from "../endpoints/api"; // Ensure `login` is imported
+import { is_authenticated, login, register } from "../endpoints/api";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [role, setRole] = useState(null);
     const nav = useNavigate();
 
     const get_authenticated = async () => {
         try {
             const success = await is_authenticated();
-            setIsAuthenticated(success);
+            if (success) {
+                setIsAuthenticated(true);
+                setRole(success.role);
+            }
         } catch {
             setIsAuthenticated(false);
-        } finally {
-            setLoading(false);
         }
     };
 
     const login_user = async (username, password) => {
-        const success = await login(username, password);
-        if (success) {
-            setIsAuthenticated(true);
-            nav('/');
+        try {
+            const response = await login(username, password);
+            if (response) {
+                setIsAuthenticated(true);
+                setRole(response.role);
+                localStorage.setItem("role", response.role);
+                nav('/');
+            }
+        } catch {
+            alert("Invalid login");
         }
     };
 
-    const register_user = async (username, email, password, Cpassword) => {
+    const register_user = async (username, email, password, Cpassword, role) => {
         if(password === Cpassword) {
             try{
-                await register(username, email, password)
-                alert('successfully registering user')
+                await register(username, email, password, role);
+                alert('User registered successfully');
             } catch{
-                alert('error registering user')
+                alert('Error registering user');
             }
-            
         } else {
-            alert('password dont match')
+            alert('Passwords do not match');
         }
-
     }
 
     useEffect(() => {
         get_authenticated();
-    }, [nav]); // Use `nav` to detect route changes
+    }, []);
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, loading, login_user , register_user}}>
+        <AuthContext.Provider value={{ isAuthenticated, role, login_user, register_user }}>
             {children}
         </AuthContext.Provider>
     );

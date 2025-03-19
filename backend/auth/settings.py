@@ -44,13 +44,16 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     # 'users', 
-    'autocare',
+    # 'autocare',
     'chat.apps.ChatConfig',
-    'account'
+    'account',
+    'services',
 ]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

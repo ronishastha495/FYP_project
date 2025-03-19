@@ -8,8 +8,12 @@ import PrivateRoute from "./components/private_routes.jsx";
 import { AuthProvider } from "./contexts/useAuth";
 // import ForgotPassword from "./components/ForgetPassword.jsx";
 // import VehicleList from "./components/VehicleList.jsx";
-import ServicePage from "./pages/appointment.jsx";
-import UserDashboard from "./pages/userdash.jsx";
+// import ServicePage from "./pages/appointment.jsx";
+// import UserDashboard from "./pages/userdash.jsx";
+import Vehicles from "./pages/Vehicles.jsx";
+import ServiceHistory from "./pages/ServiceHistory.jsx";
+import Bookings from "./pages/Bookings.jsx";
+import Reminders from "./pages/Reminders.jsx";
 
 function App() {
     return (
@@ -18,8 +22,12 @@ function App() {
                 <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/appointment" element={<ServicePage />} />
-                <Route path="/appointment" element={<UserDashboard />} />
+                {/* <Route path="/appointment" element={<ServicePage />} />
+                <Route path="/appointment" element={<UserDashboard />} /> */}
+                <Route path="/vehicles" element={<Vehicles />} />
+                <Route path="/service-history" element={<ServiceHistory />} />
+                <Route path="/bookings" element={<Bookings />} />
+                <Route path="/reminders" element={<Reminders />} />
 
                 {/* <Route path="/forgot-password" element={<ForgotPassword />} /> 
                 <Route path="/" element={<VehicleList />} /> */}

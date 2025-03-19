@@ -2,26 +2,30 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import backgroundImage from '../assets/background.jpg';
 import { useAuth } from '../contexts/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [Cpassword, setCPassword] = useState("");
-  const [error, setError] = useState(""); // ✅ Added missing state for error handling
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [Cpassword, setCPassword] = useState('');
+  const [role, setRole] = useState('customer'); // Default role is 'customer'
+  const [error, setError] = useState('');
   const { register_user } = useAuth();
+  const navigate = useNavigate();
 
   const handleRegister = (event) => {
-    event.preventDefault(); // ✅ Prevent form from refreshing the page
+    event.preventDefault();
 
     if (password !== Cpassword) {
-      setError("Passwords do not match!");
+      setError('Passwords do not match!');
       return;
     }
 
-    register_user(username, email, password, Cpassword)
-      .catch((err) => setError(err.message)); // ✅ Handle registration errors
+    register_user(username, email, password, Cpassword, role)
+      .then(() => navigate('/login')) // Redirect to login after successful registration
+      .catch((err) => setError(err.message));
   };
 
   return (
@@ -36,10 +40,9 @@ const Register = () => {
       >
         <div className="bg-white/95 backdrop-blur-sm p-8 rounded-xl shadow-lg w-full max-w-md mx-4">
           <h2 className="text-2xl font-semibold text-gray-800 mb-1 text-center">
-            Create an account to Register
+            Create an account
           </h2>
 
-          {/* ✅ Display error if exists */}
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
           <form className="space-y-4" onSubmit={handleRegister}>
@@ -80,7 +83,7 @@ const Register = () => {
               <div className="relative">
                 <input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -104,7 +107,7 @@ const Register = () => {
               <div className="relative">
                 <input
                   id="Cpassword"
-                  type={showPassword ? "text" : "password"} // ✅ Fixed input type
+                  type={showPassword ? 'text' : 'password'}
                   value={Cpassword}
                   onChange={(e) => setCPassword(e.target.value)}
                   placeholder="••••••••"
@@ -121,6 +124,22 @@ const Register = () => {
               </div>
             </div>
 
+            <div>
+              <label htmlFor="role" className="block text-sm text-gray-600 mb-1">
+                Role
+              </label>
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                required
+              >
+                <option value="customer">Customer</option>
+                <option value="service_manager">Service Manager</option>
+              </select>
+            </div>
+
             <button
               type="submit"
               style={{
@@ -128,7 +147,7 @@ const Register = () => {
               }}
               className="w-full py-2.5 text-white rounded-lg mt-6 hover:opacity-95 transition-opacity"
             >
-              Register {/* ✅ Changed button text */}
+              Register
             </button>
           </form>
 
