@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import backgroundImage from '../assets/background.jpg';
-import { useAuth } from '../contexts/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { register } from '../endpoints/api';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,22 +12,28 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [Cpassword, setCPassword] = useState('');
-  const [role, setRole] = useState('customer'); // Default role is 'customer'
-  const [error, setError] = useState('');
-  const { register_user } = useAuth();
+  const [role, setRole] = useState('customer');
   const navigate = useNavigate();
 
-  const handleRegister = (event) => {
+  const handleRegister = async (event) => {
     event.preventDefault();
 
     if (password !== Cpassword) {
-      setError('Passwords do not match!');
+      toast.error('Passwords do not match!');
       return;
     }
 
-    register_user(username, email, password, Cpassword, role)
-      .then(() => navigate('/login')) // Redirect to login after successful registration
-      .catch((err) => setError(err.message));
+    try {
+      const res = await register(username, email, password, Cpassword, role);
+      toast.success('Registration successful! Redirecting to login...');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } catch (err) {
+      const errorMsg =
+        err?.response?.data?.error || err?.message || 'Registration failed';
+      toast.error(errorMsg);
+    }
   };
 
   return (
@@ -42,8 +50,6 @@ const Register = () => {
           <h2 className="text-2xl font-semibold text-gray-800 mb-1 text-center">
             Create an account
           </h2>
-
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
           <form className="space-y-4" onSubmit={handleRegister}>
             <div>

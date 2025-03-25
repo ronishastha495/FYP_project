@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react"; 
 import { useNavigate } from "react-router-dom";
-import { is_authenticated, login, register } from "../endpoints/api";
+import { is_authenticated, login, register, logout } from "../endpoints/api";
 
 const AuthContext = createContext();
 
@@ -27,33 +27,40 @@ export const AuthProvider = ({ children }) => {
             if (response) {
                 setIsAuthenticated(true);
                 setRole(response.role);
-                localStorage.setItem("role", response.role);
-                nav('/');
+                localStorage.setItem("role", response.role); // ✅ Store role in localStorage
+
+                // ✅ Navigate based on role
+                if (response.role === "Service Manager") {
+                    nav('/manager'); // Redirect to Service Manager page
+                } else {
+                    nav('/'); // Default Home page
+                }
             }
         } catch {
             alert("Invalid login");
         }
     };
 
-    const register_user = async (username, email, password, Cpassword, role) => {
-        if(password === Cpassword) {
-            try{
-                await register(username, email, password, role);
-                alert('User registered successfully');
-            } catch{
-                alert('Error registering user');
+    const logout_user = async () => {
+        try {
+            const success = await logout();
+            if (success) {
+                setIsAuthenticated(false);
+                setRole(null);
+                localStorage.removeItem("role"); // ✅ Remove role from localStorage
+                nav('/login'); // Redirect to login page
             }
-        } else {
-            alert('Passwords do not match');
+        } catch {
+            alert("Logout failed");
         }
-    }
+    };
 
     useEffect(() => {
         get_authenticated();
     }, []);
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, role, login_user, register_user }}>
+        <AuthContext.Provider value={{ isAuthenticated, role, login_user, logout_user }}>
             {children}
         </AuthContext.Provider>
     );

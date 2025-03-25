@@ -1,64 +1,81 @@
 # chat/consumers.py
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.contrib.auth.models import User
-from .models import Message
-from asgiref.sync import sync_to_async
-
+from channels.db import database_sync_to_async
+from django.contrib.auth.models import AnonymousUser
+from account.models import User
+from chat.models import Conversation, Message
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['room_name']
-        user1 = self.scope['user'].username 
-        user2 = self.room_name
-        self.room_group_name = f"chat_{''.join(sorted([user1, user2]))}"
+        self.user = self.scope["user"]
+        if self.user == AnonymousUser():
+            await self.close()
+            return
 
-        # Join room group
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        # Join user's personal room
+        await self.channel_layer.group_add(
+            f"user_{self.user.id}",
+            self.channel_name
+        )
+        
         await self.accept()
 
     async def disconnect(self, close_code):
-        # Leave room group
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        if hasattr(self, 'user') and self.user != AnonymousUser():
+            await self.channel_layer.group_discard(
+                f"user_{self.user.id}",
+                self.channel_name
+            )
 
     async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        message = text_data_json['message']
-        sender = self.scope['user']  
-        receiver = await self.get_receiver_user() 
+        data = json.loads(text_data)
+        message = data['message']
+        conversation_id = data['conversation_id']
+        sender_id = data['sender_id']
 
-        await self.save_message(sender, receiver, message)
+        # Save message to database
+        conversation = await self.get_conversation(conversation_id)
+        sender = await self.get_user(sender_id)
+        message_obj = await self.create_message(conversation, sender, message)
 
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            
-            {
-                'type': 'chat_message',
-                'sender': sender.username,
-                'receiver': receiver.username,
-                'message': message
-            }
-        )
-        
+        # Send message to all participants
+        for participant in await self.get_participants(conversation):
+            await self.channel_layer.group_send(
+                f"user_{participant.id}",
+                {
+                    'type': 'chat_message',
+                    'message': message,
+                    'sender_id': sender_id,
+                    'conversation_id': conversation_id,
+                    'timestamp': str(message_obj.timestamp)
+                }
+            )
 
     async def chat_message(self, event):
-        message = event['message']
-        sender = event['sender']
-        receiver = event['receiver']
-
-        # Send message to WebSocket
         await self.send(text_data=json.dumps({
-            'sender': sender,
-            'receiver': receiver,
-            'message': message
+            'message': event['message'],
+            'sender_id': event['sender_id'],
+            'conversation_id': event['conversation_id'],
+            'timestamp': event['timestamp']
         }))
 
-    @sync_to_async
-    def save_message(self, sender, receiver, message):
-        Message.objects.create(sender=sender, receiver=receiver, content=message)
+    @database_sync_to_async
+    def get_conversation(self, conversation_id):
+        return Conversation.objects.get(id=conversation_id)
 
-    @sync_to_async
-    def get_receiver_user(self):
-        return User.objects.get(username=self.room_name)
+    @database_sync_to_async
+    def get_user(self, user_id):
+        return User.objects.get(id=user_id)
 
+    @database_sync_to_async
+    def create_message(self, conversation, sender, content):
+        return Message.objects.create(
+            conversation=conversation,
+            sender=sender,
+            content=content
+        )
 
+    @database_sync_to_async
+    def get_participants(self, conversation):
+        return list(conversation.participants.all())

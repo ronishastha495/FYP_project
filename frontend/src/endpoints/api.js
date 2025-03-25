@@ -3,65 +3,57 @@ import axios from 'axios';
 const BASE_URL = 'http://127.0.0.1:8000/';
 // const LOGIN_URL = `${BASE_URL}token/`;
 const REFRESH_URL = `${BASE_URL}token/refresh/`;
-const APPOINTMENTS_URL = `${BASE_URL}appointments/`;
-const LOGOUT_URL = `${BASE_URL}logout/`;
-const AUTH_URL = `${BASE_URL}authenticated/`;
-const REGISTER_URL = `${BASE_URL}register/`;
-// const LOGIN_URL = `${BASE_URL}login/`;
-const SERVICES_URL = `${BASE_URL}services/`;
+// const APPOINTMENTS_URL = `${BASE_URL}appointments/`;
+const LOGOUT_URL = `${BASE_URL}account/logout/`;
+const AUTH_URL = `${BASE_URL}account/authenticated/`;
+const REGISTER_URL = `${BASE_URL}account/register/`;
+const LOGIN_URL = `${BASE_URL}account/login/`;
+// const SERVICES_URL = `${BASE_URL}services/`;
 
-
-// 📌 Helper function to get the refresh token from cookies
 const getRefreshToken = () => {
-    return document.cookie
-        .split('; ')
-        .find(row => row.startsWith('refresh_token='))
-        ?.split('=')[1];
+    return localStorage.getItem("refreshToken");
 };
 
-const checkAuthentication = async () => {
+export const is_authenticated = async () => {
     try {
-        const response = await axios.get('http://127.0.0.1:8000/authenticated/', {
-            withCredentials: true,  // Include cookies for session-based authentication
+        const response = await axios.get(AUTH_URL, { 
+            headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` } 
         });
         return response.data;
-    } catch (error) {
-        console.error('Authentication check failed:', error);
-        throw error;
+    } catch {
+        return false;
     }
 };
 
-// Usage
-checkAuthentication()
-    .then(data => {
-        if (data.authenticated) {
-            console.log('User is authenticated:', data.username);
-        } else {
-            console.log('User is not authenticated');
-        }
-    })
-    .catch(error => {
-        console.error('Error checking authentication:', error);
-    });
-
-/**
- * 🏷️ Login user and store token
- */
 export const login = async (username, password) => {
     try {
-        const response = await axios.post(LOGIN_URL, { username, password }, { withCredentials: true });
-        localStorage.setItem("token", response.data.access);
-        document.cookie = `refresh_token=${response.data.refresh}; path=/;`;
-        return true;
+        const response = await axios.post(LOGIN_URL, 
+            { username, password }, 
+            {
+                headers: { "Content-Type": "application/json" },
+                withCredentials: true 
+            }
+        );
+
+        localStorage.setItem("accessToken", response.data.access); // ✅ Save JWT token
+        localStorage.setItem("refreshToken", response.data.refresh); // ✅ Save JWT token
+        return response.data;
     } catch (error) {
         console.error("Login failed:", error.response?.data);
         return false;
     }
 };
 
-/**
- * 🔄 Refresh token if expired
- */
+export const register = async (username, email, password, role) => {
+    try {
+        await axios.post(REGISTER_URL, { username, email, password, role }, { withCredentials: true });
+        alert("User registered successfully");
+    } catch (error) {
+        console.error("Registration failed:", error.response?.data);
+        alert("Error registering user");
+    }
+};
+
 export const refresh_token = async () => {
     try {
         const refreshToken = getRefreshToken();
@@ -74,41 +66,6 @@ export const refresh_token = async () => {
     }
 };
 
-/**
- * 📌 Register a user with role selection
- */
-export const register = async (username, email, password, role) => {
-    try {
-        const response = await axios.post(REGISTER_URL, { username, email, password, role }, { withCredentials: true });
-        return response.data;
-    } catch (error) {
-        console.error("Registration error:", error.response?.data);
-        throw error;
-    }
-};
-
-/**
- * 👀 Check if the user is authenticated
- */
-// export const is_authenticated = async () => {
-//     try {
-//         const token = localStorage.getItem("token");
-//         if (!token) return false;
-        
-//         const response = await axios.get(AUTH_URL, {
-//             headers: { Authorization: `Bearer ${token}` },
-//         });
-
-//         return response.data;
-//     } catch (error) {
-//         console.error("Authentication check failed:", error.response?.data);
-//         return false;
-//     }
-// };
-
-/**
- * 📌 Fetch user appointments with token refresh handling
- */
 export const get_appointments = async () => {
     try {
         const response = await axios.get(APPOINTMENTS_URL, {
@@ -126,24 +83,51 @@ export const get_appointments = async () => {
     }
 };
 
-/**
- * 🚪 Logout user and clear tokens
- */
 export const logout = async () => {
     try {
-        await axios.post(LOGOUT_URL, { refresh_token: getRefreshToken() }, { withCredentials: true });
-        localStorage.removeItem("token");
-        document.cookie = "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+        // Retrieve access and refresh tokens
+        const accessToken = localStorage.getItem('accessToken');
+        const refreshToken = localStorage.getItem('refreshToken');
+        
+        if (!refreshToken) {
+            console.warn("No refresh token found.");
+            return false;
+        }
+
+        // Comprehensive logout request
+        const response = await axios.post('/account/logout/', 
+            { refresh_token: refreshToken }, 
+            { 
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}` // Include access token in header
+                },
+                withCredentials: true // Important for cookie-based auth
+            }
+        );
+
+        // Clear all authentication-related storage
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        
+        // Clear all cookies
+        document.cookie.split(";").forEach((c) => {
+            document.cookie = c
+                .replace(/^ +/, "")
+                .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+
         return true;
     } catch (error) {
-        console.error("Logout failed:", error.response?.data);
+        console.error("Logout failed:", {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message
+        });
         return false;
     }
 };
 
-/**
- * 🔄 Handles token expiration and retries requests
- */
 const call_refresh = async (error, func) => {
     if (error.response?.status === 401) {
         const refreshed = await refresh_token();
@@ -152,82 +136,79 @@ const call_refresh = async (error, func) => {
     return false;
 };
 
-/**
- * 🏷️ Fetch user vehicles
- */
-export const getVehicles = async () => {
-    try {
-        const response = await axios.get(`${SERVICES_URL}vehicles/`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-            withCredentials: true,
-        });
-        return response.data;
-    } catch (error) {
-        return call_refresh(error, () =>
-            axios.get(`${SERVICES_URL}vehicles/`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                withCredentials: true,
-            })
-        );
-    }
-};
+// export const getVehicles = async () => {
+//     try {
+//         const response = await axios.get(`${SERVICES_URL}vehicles/`, {
+//             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//             withCredentials: true,
+//         });
+//         return response.data;
+//     } catch (error) {
+//         return call_refresh(error, () =>
+//             axios.get(`${SERVICES_URL}vehicles/`, {
+//                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//                 withCredentials: true,
+//             })
+//         );
+//     }
+// };
 
-/**
- * 🏷️ Fetch service history for a vehicle
- */
-export const getServiceHistory = async (vehicleId) => {
-    try {
-        const response = await axios.get(`${SERVICES_URL}service-history/?vehicle=${vehicleId}`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-            withCredentials: true,
-        });
-        return response.data;
-    } catch (error) {
-        return call_refresh(error, () =>
-            axios.get(`${SERVICES_URL}service-history/?vehicle=${vehicleId}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                withCredentials: true,
-            })
-        );
-    }
-};
+// /**
+//  * 🏷️ Fetch service history for a vehicle
+//  */
+// export const getServiceHistory = async (vehicleId) => {
+//     try {
+//         const response = await axios.get(`${SERVICES_URL}service-history/?vehicle=${vehicleId}`, {
+//             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//             withCredentials: true,
+//         });
+//         return response.data;
+//     } catch (error) {
+//         return call_refresh(error, () =>
+//             axios.get(`${SERVICES_URL}service-history/?vehicle=${vehicleId}`, {
+//                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//                 withCredentials: true,
+//             })
+//         );
+//     }
+// };
 
-/**
- * 🏷️ Fetch user bookings
- */
-export const getBookings = async () => {
-    try {
-        const response = await axios.get(`${SERVICES_URL}bookings/`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-            withCredentials: true,
-        });
-        return response.data;
-    } catch (error) {
-        return call_refresh(error, () =>
-            axios.get(`${SERVICES_URL}bookings/`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                withCredentials: true,
-            })
-        );
-    }
-};
+// /**
+//  * 🏷️ Fetch user bookings
+//  */
+// export const getBookings = async () => {
+//     try {
+//         const response = await axios.get(`${SERVICES_URL}bookings/`, {
+//             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//             withCredentials: true,
+//         });
+//         return response.data;
+//     } catch (error) {
+//         return call_refresh(error, () =>
+//             axios.get(`${SERVICES_URL}bookings/`, {
+//                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//                 withCredentials: true,
+//             })
+//         );
+//     }
+// };
 
-/**
- * 🏷️ Fetch user reminders
- */
-export const getReminders = async () => {
-    try {
-        const response = await axios.get(`${SERVICES_URL}reminders/`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-            withCredentials: true,
-        });
-        return response.data;
-    } catch (error) {
-        return call_refresh(error, () =>
-            axios.get(`${SERVICES_URL}reminders/`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                withCredentials: true,
-            })
-        );
-    }
-};
+// /**
+//  * 🏷️ Fetch user reminders
+//  */
+// export const getReminders = async () => {
+//     try {
+//         const response = await axios.get(`${SERVICES_URL}reminders/`, {
+//             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//             withCredentials: true,
+//         });
+//         return response.data;
+//     } catch (error) {
+//         return call_refresh(error, () =>
+//             axios.get(`${SERVICES_URL}reminders/`, {
+//                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+//                 withCredentials: true,
+//             })
+//         );
+//     }
+// };

@@ -1,23 +1,33 @@
 # services/serializers.py
 from rest_framework import serializers
-from .models import Vehicle, ServiceHistory, Booking, Reminder
+from .models import Vehicle, Servicing, ServiceHistory, Booking, Reminder, Notification
 
 class VehicleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vehicle
-        fields = ['id', 'user', 'make', 'model', 'year', 'vin']
+        fields = '__all__'
+
+class ServicingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Servicing
+        fields = '__all__'
 
 class ServiceHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceHistory
-        fields = ['id', 'vehicle', 'service_date', 'service_type', 'cost', 'notes']
+        fields = '__all__'
 
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
-        fields = ['id', 'user', 'vehicle', 'service', 'date', 'time']
+        fields = '__all__'
 
 class ReminderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reminder
-        fields = ['id', 'user', 'message', 'date', 'time']
+        fields = '__all__'
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'

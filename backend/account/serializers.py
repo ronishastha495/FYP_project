@@ -22,16 +22,21 @@ class UserSerializer(serializers.ModelSerializer):
 # ✅ Register Serializer
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    role = serializers.CharField(required=False, default='customer')
 
     class Meta:
         model = User
         fields = ('username', 'email', 'password', 'role')
 
     def create(self, validated_data):
-        validated_data['password'] = make_password(validated_data['password']),
-        validated_data['role'] = validated_data.get('role', 'customer'),
-        email=validated_data['email'],
-        return User.objects.create(**validated_data)
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+        )
+        user.role = validated_data.get('role', 'customer')
+        user.save()
+        return user
 
 # ✅ Login Serializer
 class LoginSerializer(serializers.Serializer):

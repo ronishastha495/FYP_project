@@ -1,4 +1,5 @@
 
+
 from pathlib import Path
 from django.contrib.messages import constants as messages
 from datetime import timedelta
@@ -45,10 +46,21 @@ INSTALLED_APPS = [
     'corsheaders',
     # 'users', 
     # 'autocare',
-    'chat.apps.ChatConfig',
     'account',
     'services',
+    'chat',
 ]
+
+ASGI_APPLICATION = 'auth.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -64,20 +76,44 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "https://localhost:3000"
+    "http://localhost:5173",  # Vite dev server
+    "http://localhost:3000"   # Alternative frontend port
 ]
 
-CORS_ALLOW_CREDENTIALS= True
+CORS_ALLOW_CREDENTIALS = True
 
-REST_FRAMEWORk = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (   'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }
 
- 
-CORS_ALLOWED_ORIGINS =[
-    "http://localhost:5173"
-]
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True
+}
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your-email@gmail.com'  # Replace with your email
+EMAIL_HOST_PASSWORD = 'your-app-password'  # Replace with your app password
+
+# Static files configuration
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Allow Authorization header for frontend
 CORS_ALLOW_HEADERS = [
@@ -94,7 +130,7 @@ ROOT_URLCONF = 'auth.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

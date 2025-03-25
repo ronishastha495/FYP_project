@@ -1,79 +1,35 @@
 # services/views.py
-from rest_framework import generics, permissions
-from .models import Vehicle, ServiceHistory, Booking, Reminder
-from .serializers import VehicleSerializer, ServiceHistorySerializer, BookingSerializer, ReminderSerializer
+from rest_framework import viewsets
+from rest_framework import permissions
+from .models import Vehicle, Servicing, ServiceHistory, Booking, Reminder, Notification
+from .serializers import VehicleSerializer, ServicingSerializer, ServiceHistorySerializer, BookingSerializer, ReminderSerializer, NotificationSerializer
 
-# Vehicle Views
-class VehicleListView(generics.ListCreateAPIView):
+class VehicleViewSet(viewsets.ModelViewSet):
+    queryset = Vehicle.objects.all()
     serializer_class = VehicleSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
-    def get_queryset(self):
-        return Vehicle.objects.filter(user=self.request.user)
+class ServicingViewSet(viewsets.ModelViewSet):
+    queryset = Servicing.objects.all()
+    serializer_class = ServicingSerializer
+    permission_classes = [permissions.AllowAny]
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-class VehicleDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = VehicleSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Vehicle.objects.filter(user=self.request.user)
-
-# Service History Views
-class ServiceHistoryListView(generics.ListCreateAPIView):
+class ServiceHistoryViewSet(viewsets.ModelViewSet):
+    queryset = ServiceHistory.objects.all()
     serializer_class = ServiceHistorySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
-    def get_queryset(self):
-        return ServiceHistory.objects.filter(vehicle__user=self.request.user)
-
-    def perform_create(self, serializer):
-        vehicle = serializer.validated_data['vehicle']
-        if vehicle.user != self.request.user:
-            raise permissions.PermissionDenied("You do not own this vehicle.")
-        serializer.save()
-
-class ServiceHistoryDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = ServiceHistorySerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return ServiceHistory.objects.filter(vehicle__user=self.request.user)
-
-# Booking Views
-class BookingListView(generics.ListCreateAPIView):
+class BookingViewSet(viewsets.ModelViewSet):
+    queryset = Booking.objects.all()
     serializer_class = BookingSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
-    def get_queryset(self):
-        return Booking.objects.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-class BookingDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = BookingSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Booking.objects.filter(user=self.request.user)
-
-# Reminder Views
-class ReminderListView(generics.ListCreateAPIView):
+class ReminderViewSet(viewsets.ModelViewSet):
+    queryset = Reminder.objects.all()
     serializer_class = ReminderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
-    def get_queryset(self):
-        return Reminder.objects.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-class ReminderDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = ReminderSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Reminder.objects.filter(user=self.request.user)
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.AllowAny]
