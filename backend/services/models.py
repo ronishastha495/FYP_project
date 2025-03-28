@@ -5,11 +5,11 @@ from django.utils import timezone
 
 # Vehicle Model
 class Vehicle(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Link to the user
-    make = models.CharField(max_length=100)  # Vehicle make (e.g., Toyota)
-    model = models.CharField(max_length=100)  # Vehicle model (e.g., Corolla)
-    year = models.IntegerField()  # Manufacturing year
-    vin = models.CharField(max_length=17, unique=True)  # Vehicle Identification Number
+    make = models.CharField(max_length=255)
+    model = models.CharField(max_length=255)
+    year = models.CharField(max_length=4)
+    vin = models.CharField(max_length=17, unique=True)
+    image = models.ImageField(upload_to="vehicle_images/", blank=True, null=True)
 
     def __str__(self):
         return f"{self.make} {self.model} ({self.year})"
@@ -19,6 +19,7 @@ class Servicing(models.Model):
     name = models.CharField(max_length=200)  # Name of the service
     description = models.TextField(blank=True)  # Description of the service
     cost = models.DecimalField(max_digits=10, decimal_places=2)  # Cost of the service
+    image = models.ImageField(upload_to='service_images/', null=True, blank=True)  # Service image
 
     def __str__(self):
         return self.name

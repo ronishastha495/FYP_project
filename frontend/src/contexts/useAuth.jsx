@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react"; 
 import { useNavigate } from "react-router-dom";
-import { is_authenticated, login, register, logout } from "../endpoints/api";
+import { is_authenticated, login, register, logout } from "../api/auth";
 
 const AuthContext = createContext();
 
@@ -24,22 +24,19 @@ export const AuthProvider = ({ children }) => {
     const login_user = async (username, password) => {
         try {
             const response = await login(username, password);
+            console.log("The response is", response)
             if (response) {
-                setIsAuthenticated(true);
-                setRole(response.role);
-                localStorage.setItem("role", response.role); // ✅ Store role in localStorage
 
-                // ✅ Navigate based on role
-                if (response.role === "Service Manager") {
-                    nav('/manager'); // Redirect to Service Manager page
-                } else {
-                    nav('/'); // Default Home page
-                }
+                setIsAuthenticated(true);
+                setRole(response.user.role);                
+                localStorage.setItem("role", response.user.role); // ✅ Store role in localStorage 
             }
+            return response;
         } catch {
             alert("Invalid login");
         }
     };
+    
 
     const logout_user = async () => {
         try {

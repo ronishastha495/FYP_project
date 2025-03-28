@@ -1,17 +1,17 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
-from .models import UserProfile
+from .models import UserProfile, ServiceManagerProfile
 
 User = get_user_model()
 
-# ✅ User Profile Serializer
+# User Profile Serializer
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = ('address', 'city', 'country', 'bio', 'profile_picture')
 
-# ✅ User Serializer (To Display User Info)
+# User Serializer (To Display User Info)
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer()
 
@@ -19,11 +19,22 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'email', 'role', 'phone_number', 'profile')
 
-# ✅ Register Serializer
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    role = serializers.CharField(required=False, default='customer')
+# Service Manager Profile Serializer
+class ServiceManagerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServiceManagerProfile
+        fields = ['service_center_name', 'experience_years', 'location', 'contact_number']
 
+# Update User Profile Serializer
+class UpdateUserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ('address', 'city', 'country', 'bio', 'profile_picture')
+
+# Register Serializer
+class RegisterSerializer(serializers.ModelSerializer):
+    role = serializers.ChoiceField(choices=User.ROLE_CHOICES)
+    
     class Meta:
         model = User
         fields = ('username', 'email', 'password', 'role')
@@ -33,38 +44,27 @@ class RegisterSerializer(serializers.ModelSerializer):
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
+            role=validated_data['role']
         )
-        user.role = validated_data.get('role', 'customer')
-        user.save()
         return user
 
-# ✅ Login Serializer
+# Login Serializer
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        user = User.objects.filter(username=data['username']).first()
-        if user and user.check_password(data['password']):
+        from django.contrib.auth import authenticate
+        user = authenticate(**data)
+        if user and user.is_active:
             return user
-        raise serializers.ValidationError("Invalid credentials")
+        raise serializers.ValidationError("Incorrect Credentials")
 
-# ✅ Forgot Password Serializer
+# Password Reset Serializer
 class PasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
-# ✅ Change Password Serializer (For Logged-In Users)
+# Change Password Serializer
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(write_only=True)
-
-    def validate(self, data):
-        if data['old_password'] == data['new_password']:
-            raise serializers.ValidationError("New password must be different from the old password.")
-        return data
-
-# ✅ Update Profile Serializer
-class UpdateUserProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserProfile
-        fields = ('address', 'city', 'country', 'bio', 'profile_picture')
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)

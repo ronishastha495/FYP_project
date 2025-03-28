@@ -17,6 +17,7 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
+# General User Profile (For All Users)
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     address = models.TextField(blank=True, null=True)
@@ -28,8 +29,24 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.username}'s Profile"
 
-# Auto-create UserProfile when a new User is created
+# Service Manager Profile (Extra Fields for Service Managers)
+class ServiceManagerProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='service_manager_profile')
+    service_center_name = models.CharField(max_length=255, blank=True, null=True)
+    experience_years = models.IntegerField(blank=True, null=True)
+    location = models.CharField(max_length=255, blank=True, null=True)
+    contact_number = models.CharField(max_length=20, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.service_center_name or 'No Service Center'}"
+
+# Auto-create UserProfile for ALL users and ServiceManagerProfile for service managers
 @receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
+def create_profiles(sender, instance, created, **kwargs):
     if created:
+        # Create UserProfile for all users
         UserProfile.objects.create(user=instance)
+
+        # Create ServiceManagerProfile only for service managers
+        if instance.role == 'service_manager':
+            ServiceManagerProfile.objects.create(user=instance)

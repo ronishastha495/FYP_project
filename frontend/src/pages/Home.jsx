@@ -1,8 +1,8 @@
 import React from 'react';
 import { Car, Search, Bell, Calendar, DollarSign, User, Wrench, Clock } from 'lucide-react';
 import backgroundImage from '../assets/background.jpg';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import Navbar from '../components/common/Navbar';
+import Footer from '../components/common/Footer';
 import Services from './Services';
 
 const Home = () => {

@@ -2,9 +2,10 @@
 from django.contrib import admin
 from .models import Vehicle, Servicing, ServiceHistory, Booking, Reminder, Notification
 
+
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
-    list_display = ['user', 'make', 'model', 'year', 'vin']
+    list_display = ['make', 'model', 'year', 'vin']
     search_fields = ['make', 'model', 'vin']
 
 @admin.register(Servicing)
@@ -31,3 +32,4 @@ class ReminderAdmin(admin.ModelAdmin):
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ['user', 'message', 'timestamp', 'is_read']
     search_fields = ['user__username', 'message']
+

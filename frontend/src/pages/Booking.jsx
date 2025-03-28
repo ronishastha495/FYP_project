@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import Footer from '../components/Footer';
-import Navbar from '../components/Navbar';
+import React, { useState } from 'react';
+import { createBooking } from '../api/services';
 
-const BookingForm = ({ service, onClose, onSubmit }) => {
+const BookingForm = ({ service, vehicles, onClose, onSubmit }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    type: 'service', // 'service' or 'purchase'
+    type: 'service',
     vehicleModel: '',
     serviceType: service?.title || '',
-    purchaseModel: '',
     date: '',
     time: '',
     notes: '',
@@ -17,6 +15,7 @@ const BookingForm = ({ service, onClose, onSubmit }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState('');
+  const [error, setError] = useState(null);
 
   const timeSlots = [
     '09:00 AM', '09:15 AM', '09:30 AM', '09:45 AM',
@@ -66,12 +65,8 @@ const BookingForm = ({ service, onClose, onSubmit }) => {
   };
 
   const handleNext = () => {
-    if (step === 1 && !formData.type) return;
-    if (step === 2) {
-      if (formData.type === 'service' && !formData.vehicleModel) return;
-      if (formData.type === 'purchase' && !formData.purchaseModel) return;
-    }
-    if (step === 3 && (!formData.date || !formData.time)) return;
+    if (step === 1 && !formData.vehicleModel) return;
+    if (step === 2 && (!formData.date || !formData.time)) return;
     setStep(step + 1);
   };
 
@@ -79,139 +74,101 @@ const BookingForm = ({ service, onClose, onSubmit }) => {
     setStep(step - 1);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    setError(null);
+    try {
+      const response = await createBooking(formData);
+      onSubmit(response);
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
-  const totalSteps = 4;
-
   return (
-    <div>
-    <div className="fixed inset-0 bg-indigo-50 flex items-center justify-center z-50 animate-slideIn">
-      <div className="bg-white rounded-lg p-8 w-full max-w-2xl shadow-lg">
-      <Navbar />
-        <h2 className="text-3xl font-bold text-gray-800 mb-4 text-center">Book Appointment</h2>
-        <p className="text-gray-600 text-center mb-6">Service: {service?.title}</p>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-8 w-full max-w-2xl">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">Book Appointment</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            ×
+          </button>
+        </div>
 
-        {/* Progress Indicator */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+
         <div className="flex justify-between mb-8">
-          {Array.from({ length: totalSteps }, (_, index) => (
-            <div key={index} className="flex-1 text-center">
+          {[1, 2, 3].map((num) => (
+            <div key={num} className="flex-1 text-center">
               <div
                 className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${
-                  step > index + 1 ? 'bg-blue-500 text-white' : step === index + 1 ? 'bg-blue-300 text-white' : 'bg-gray-200 text-gray-600'
-                }`}
+                  step > num ? 'bg-green-500' : step === num ? 'bg-blue-500' : 'bg-gray-200'
+                } text-white`}
               >
-                {index + 1}
+                {num}
               </div>
-              <p className="text-sm mt-2 text-gray-600">
-                {index === 0 ? 'Type' : index === 1 ? 'Details' : index === 2 ? 'Date & Time' : 'Notes'}
+              <p className="text-sm mt-2">
+                {num === 1 ? 'Vehicle' : num === 2 ? 'Schedule' : 'Confirm'}
               </p>
             </div>
           ))}
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Step 1: Select Type */}
           {step === 1 && (
-            <div className="animate-fadeIn">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Step 1: Select Booking Type</h3>
-              <div className="mb-6">
-                <label className="block text-gray-700 mb-2 font-semibold">Type</label>
+            <div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Select Vehicle</label>
                 <select
-                  name="type"
-                  value={formData.type}
+                  name="vehicleModel"
+                  value={formData.vehicleModel}
                   onChange={handleChange}
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                  className="w-full p-2 border rounded"
+                  required
                 >
-                  <option value="service">Service</option>
-                  <option value="purchase">Purchase</option>
+                  <option value="">Choose a vehicle</option>
+                  {vehicles.map((vehicle) => (
+                    <option key={vehicle.id} value={vehicle.model}>
+                      {vehicle.model}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
           )}
 
-          {/* Step 2: Vehicle/Purchase Details */}
           {step === 2 && (
-            <div className="animate-fadeIn">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Step 2: Enter Details</h3>
-              {formData.type === 'service' ? (
-                <>
-                  <div className="mb-6">
-                    <label className="block text-gray-700 mb-2 font-semibold">Vehicle Model</label>
-                    <input
-                      type="text"
-                      name="vehicleModel"
-                      value={formData.vehicleModel}
-                      onChange={handleChange}
-                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                      placeholder="e.g., Toyota Corolla"
-                      required
-                    />
-                  </div>
-                  <div className="mb-6">
-                    <label className="block text-gray-700 mb-2 font-semibold">Service Type</label>
-                    <input
-                      type="text"
-                      name="serviceType"
-                      value={formData.serviceType}
-                      onChange={handleChange}
-                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                      readOnly={!!service}
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="mb-6">
-                  <label className="block text-gray-700 mb-2 font-semibold">Purchase Model</label>
-                  <select
-                    name="purchaseModel"
-                    value={formData.purchaseModel}
-                    onChange={handleChange}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                    required
-                  >
-                    <option value="">Select a car</option>
-                    <option value="Toyota Camry">Toyota Camry</option>
-                    <option value="Honda Civic">Honda Civic</option>
-                    <option value="Ford Mustang">Ford Mustang</option>
-                    <option value="Tesla Model 3">Tesla Model 3</option>
-                  </select>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 3: Date & Time */}
-          {step === 3 && (
-            <div className="animate-fadeIn">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Step 3: Select Date & Time</h3>
-              <div className="flex space-x-6">
-                {/* Date Picker */}
-                <div className="w-1/2">
+            <div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Select Date</label>
+                <div className="border rounded p-4">
                   <div className="flex justify-between items-center mb-4">
                     <button
                       type="button"
                       onClick={() => changeMonth(-1)}
-                      className="text-gray-600 hover:text-blue-500 transition duration-200"
+                      className="text-gray-600 hover:text-blue-500"
                     >
-                      &lt;
+                      Previous
                     </button>
-                    <span className="text-lg font-semibold text-gray-800">
+                    <span>
                       {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
                     </span>
                     <button
                       type="button"
                       onClick={() => changeMonth(1)}
-                      className="text-gray-600 hover:text-blue-500 transition duration-200"
+                      className="text-gray-600 hover:text-blue-500"
                     >
-                      &gt;
+                      Next
                     </button>
                   </div>
-                  <div className="grid grid-cols-7 gap-2 text-center">
-                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                      <div key={day} className="text-gray-500 font-semibold">
+                  <div className="grid grid-cols-7 gap-2">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                      <div key={day} className="text-center font-semibold">
                         {day}
                       </div>
                     ))}
@@ -219,110 +176,101 @@ const BookingForm = ({ service, onClose, onSubmit }) => {
                       <button
                         key={index}
                         type="button"
+                        disabled={!day}
                         onClick={() => day && handleDateSelect(day)}
-                        className={`p-2 rounded-full ${
-                          day
-                            ? selectedDate &&
+                        className={`p-2 text-center ${
+                          !day
+                            ? 'text-gray-300'
+                            : selectedDate &&
                               selectedDate.getDate() === day &&
                               selectedDate.getMonth() === currentMonth.getMonth()
-                              ? 'bg-blue-500 text-white'
-                              : 'hover:bg-blue-100 text-gray-800'
-                            : 'text-transparent'
-                        } transition duration-200`}
-                        disabled={!day}
+                            ? 'bg-blue-500 text-white rounded'
+                            : 'hover:bg-gray-100 rounded'
+                        }`}
                       >
-                        {day || ''}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Time Picker */}
-                <div className="w-1/2">
-                  <h4 className="text-gray-700 mb-2 font-semibold">Available Time Slots</h4>
-                  <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
-                    {timeSlots.map((time) => (
-                      <button
-                        key={time}
-                        type="button"
-                        onClick={() => handleTimeSelect(time)}
-                        className={`p-2 border rounded-lg ${
-                          selectedTime === time
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 text-gray-800 hover:bg-blue-100'
-                        } transition duration-200`}
-                      >
-                        {time}
+                        {day}
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Select Time</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {timeSlots.map((time) => (
+                    <button
+                      key={time}
+                      type="button"
+                      onClick={() => handleTimeSelect(time)}
+                      className={`p-2 text-center rounded ${
+                        selectedTime === time
+                          ? 'bg-blue-500 text-white'
+                          : 'border hover:bg-gray-100'
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Step 4: Notes */}
-          {step === 4 && (
-            <div className="animate-fadeIn">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Step 4: Additional Notes</h3>
-              <div className="mb-6">
-                <label className="block text-gray-700 mb-2 font-semibold">Notes</label>
+          {step === 3 && (
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Confirm Booking Details</h3>
+              <div className="bg-gray-50 p-4 rounded mb-4">
+                <p><strong>Service:</strong> {service?.title}</p>
+                <p><strong>Vehicle:</strong> {formData.vehicleModel}</p>
+                <p><strong>Date:</strong> {formData.date}</p>
+                <p><strong>Time:</strong> {formData.time}</p>
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Additional Notes</label>
                 <textarea
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  placeholder="Any additional details..."
+                  className="w-full p-2 border rounded"
+                  rows="3"
+                  placeholder="Any special requests or notes?"
                 />
               </div>
             </div>
           )}
 
-          {/* Navigation Buttons */}
           <div className="flex justify-between mt-6">
             {step > 1 && (
               <button
                 type="button"
                 onClick={handleBack}
-                className="bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-500 transition duration-200"
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
               >
                 Back
               </button>
             )}
-            {step < totalSteps ? (
+            {step < 3 ? (
               <button
                 type="button"
                 onClick={handleNext}
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-200 ml-auto"
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
               >
                 Next
               </button>
             ) : (
-              <div className="flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-500 transition duration-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-200"
-                >
-                  Submit
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+              >
+                Confirm Booking
+              </button>
             )}
           </div>
         </form>
       </div>
     </div>
-    //  
-    <Footer />
-</div>
   );
 };
-
 
 export default BookingForm;
