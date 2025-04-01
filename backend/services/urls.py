@@ -1,15 +1,13 @@
 # services/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import VehicleViewSet, ServicingViewSet, ServiceHistoryViewSet, BookingViewSet, ReminderViewSet, NotificationViewSet
+from . import views
 
 router = DefaultRouter()
-router.register(r'vehicles', VehicleViewSet)
-router.register(r'servicing', ServicingViewSet)
-router.register(r'service-histories', ServiceHistoryViewSet)
-router.register(r'bookings', BookingViewSet)
-router.register(r'reminders', ReminderViewSet)
-router.register(r'notifications', NotificationViewSet)
+router.register(r'vehicles', views.VehicleViewSet, basename='vehicle')
+router.register(r'services', views.ServicingViewSet, basename='service')
+router.register(r'service-history', views.ServiceHistoryViewSet, basename='servicehistory')
+router.register(r'bookings', views.BookingViewSet, basename='booking')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -21,22 +21,23 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // In login_user function:
     const login_user = async (username, password) => {
         try {
-            const response = await login(username, password);
-            console.log("The response is", response)
-            if (response) {
-
-                setIsAuthenticated(true);
-                setRole(response.user.role);                
-                localStorage.setItem("role", response.user.role); // ✅ Store role in localStorage 
-            }
+          const response = await login(username, password); // Using the API function
+          if (response) {
+            setIsAuthenticated(true);
+            const role = response.user?.role || response.role;
+            setRole(role);
+            localStorage.setItem("role", role);
             return response;
-        } catch {
-            alert("Invalid login");
+          }
+        } catch (error) {
+          console.error("Login error:", error);
+          throw error; // Rethrow to handle in component
         }
-    };
-    
+      };
+        
 
     const logout_user = async () => {
         try {
@@ -57,9 +58,14 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, role, login_user, logout_user }}>
+        <AuthContext.Provider value={{ 
+            isAuthenticated, 
+            role, 
+            login_user, 
+            logout_user 
+          }}>
             {children}
-        </AuthContext.Provider>
+          </AuthContext.Provider>
     );
 };
 

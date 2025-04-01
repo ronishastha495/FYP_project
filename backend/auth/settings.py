@@ -15,7 +15,10 @@ MESSAGE_TAGS = {
 }
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent 
+
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Quick-start development settings - unsuitable for production
@@ -26,9 +29,6 @@ SECRET_KEY = 'django-insecure-ac&6&%501p*wy=-5dnzxc11mk&(0tf%=3z*c#+_xdmcv!or6x*
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     # 'autocare',
     'account',
     'services',
+    'notifications',
+    'dashboard',
     # 'chat',
 ]
 
@@ -152,7 +154,7 @@ WSGI_APPLICATION = 'auth.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'autocare_service',  # Replace with your database name
+        'NAME': 'autocareservice',  # Replace with your database name
         'USER': 'root',  # Replace with your database username
         'PASSWORD': 'H$ky#9F2w1!j',  # Replace with your database password
         'HOST': 'localhost',  # Typically 'localhost' or an IP address

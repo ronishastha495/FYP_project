@@ -31,7 +31,7 @@ const Navbar = () => {
           <div className="flex space-x-8">
             <Link to="/" className="text-gray-600 hover:text-indigo-600">Home</Link>
             <Link to="/services" className="text-gray-600 hover:text-indigo-600">Services</Link>
-            <Link to="/appointment" className="text-gray-600 hover:text-indigo-600">Book Appointment</Link>
+            <Link to="/booking" className="text-gray-600 hover:text-indigo-600">Book Appointment</Link>
             <Link to="/tracking" className="text-gray-600 hover:text-indigo-600">Tracking</Link>
             {role === "User" && (
               <Link to="/userdash" className="text-gray-600 hover:text-indigo-600">Dashboard</Link>

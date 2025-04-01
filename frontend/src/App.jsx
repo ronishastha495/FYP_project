@@ -16,6 +16,10 @@ import ProtectedRoute from "./utils/ProtectedRoute.jsx";
 import { ManagerProvider } from "./contexts/ManagerContext";
 import Services from "./pages/Services.jsx";
 
+import UserDash from "./pages/user/userdash.jsx";
+import UserProfile from "./pages/user/userprofile.jsx";
+import BookingForm from "./pages/Booking.jsx";
+
 function App() {
     return (
         <AuthProvider>
@@ -26,6 +30,10 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="*" element={<NotFound />} />
                 <Route path="/services" element={<Services />} />
+                <Route path="/userdash" element={<UserDash />} />
+                <Route path="/userprofile" element={<UserProfile />} />
+                <Route path="/booking" element={<BookingForm />} />
+
                 <Route path="*" element={<NotFound />} />
 
 

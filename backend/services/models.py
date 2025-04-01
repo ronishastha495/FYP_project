@@ -2,6 +2,8 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+from decimal import Decimal
 
 # Vehicle Model
 class Vehicle(models.Model):
@@ -37,33 +39,165 @@ class ServiceHistory(models.Model):
 
 # Booking Model
 class Booking(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Link to the user
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)  # Link to the vehicle
-    service = models.ForeignKey(Servicing, on_delete=models.CASCADE)  # Link to the service
-    date = models.DateField()  # Booking date
-    time = models.TimeField()  # Booking time
-    is_confirmed = models.BooleanField(default=False)  # Whether the booking is confirmed
+    BOOKING_TYPE_CHOICES = (
+        ('servicing', 'Vehicle Servicing'),
+        ('purchase', 'Vehicle Purchase Inquiry'),
+    )
+    
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    )
+
+    # Core Booking Fields
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    booking_type = models.CharField(max_length=20, choices=BOOKING_TYPE_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    date = models.DateField()
+    time = models.TimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # Vehicle Reference (for both servicing and purchases)
+    vehicle = models.ForeignKey(
+        'Vehicle', 
+        on_delete=models.CASCADE,
+        verbose_name="Associated Vehicle"
+    )
+    VEHICLE_CONTEXT_CHOICES = (
+        ('customer_owned', 'Customer-Owned Vehicle'),
+        ('dealership_vehicle', 'Dealership Vehicle'),
+    )
+    vehicle_context = models.CharField(
+        max_length=20,
+        choices=VEHICLE_CONTEXT_CHOICES,
+        help_text="Is this the customer's car or a dealership vehicle?"
+    )
+
+    # Service-Specific Fields
+    primary_service = models.ForeignKey(
+        'Servicing',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='primary_bookings'
+    )
+    recommended_services = models.ManyToManyField(
+        'Servicing',
+        blank=True,
+        related_name='recommended_bookings'
+    )
+    service_notes = models.TextField(blank=True)
+    technician_notes = models.TextField(blank=True)
+
+    # Purchase-Specific Fields
+    purchase_details = models.TextField(blank=True)
+    trade_in_vehicle = models.ForeignKey(
+        'Vehicle',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='trade_in_inquiries'
+    )
+
+    # Cost Management
+    base_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    recommended_services_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    discount = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    tax_rate = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)
+    final_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        ordering = ['date', 'time']
+        verbose_name = "Booking"
+        verbose_name_plural = "Bookings"
 
     def __str__(self):
-        return f"Booking for {self.vehicle} on {self.date} at {self.time}"
+        return f"{self.get_booking_type_display()} - {self.vehicle} ({self.date})"
 
-# Reminder Model
-class Reminder(models.Model):
-    booking = models.ForeignKey(Booking, on_delete=models.CASCADE)  # Link to the booking
-    message = models.TextField()  # Reminder message
-    reminder_date = models.DateField()  # Reminder date
-    reminder_time = models.TimeField()  # Reminder time
-    is_sent = models.BooleanField(default=False)  # Whether the reminder has been sent
+    def clean(self):
+        """Validate business rules"""
+        errors = {}
+        
+        # Service booking validation
+        if self.booking_type == 'servicing':
+            if not self.primary_service:
+                errors['primary_service'] = "Primary service is required for servicing bookings"
+            if self.vehicle_context != 'customer_owned':
+                errors['vehicle_context'] = "Service bookings must use customer-owned vehicles"
+        
+        # Purchase inquiry validation
+        if self.booking_type == 'purchase':
+            if not self.purchase_details:
+                errors['purchase_details'] = "Purchase details are required"
+            if self.vehicle_context != 'dealership_vehicle':
+                errors['vehicle_context'] = "Purchase inquiries must reference dealership vehicles"
+            if self.primary_service:
+                errors['primary_service'] = "Services cannot be selected for purchase inquiries"
+        
+        if errors:
+            raise ValidationError(errors)
 
-    def __str__(self):
-        return f"Reminder for {self.booking} on {self.reminder_date} at {self.reminder_time}"
+    def calculate_costs(self):
+        """Calculate all cost components"""
+        if self.booking_type == 'servicing':
+            # Base cost from primary service
+            self.base_cost = self.primary_service.cost if self.primary_service else 0
+            
+            # Recommended services cost
+            self.recommended_services_cost = sum(
+                service.cost for service in self.recommended_services.all()
+            )
+            
+            # Final cost before tax
+            subtotal = self.base_cost + self.recommended_services_cost - self.discount
+            self.final_cost = subtotal * (1 + self.tax_rate/100)
+        
+        elif self.booking_type == 'purchase':
+            # Purchase inquiries have no service costs
+            self.base_cost = 0
+            self.recommended_services_cost = 0
+            self.final_cost = None  # Will be determined later in sales process
 
-# Notification Model
-class Notification(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Link to the user
-    message = models.TextField()  # Notification message
-    timestamp = models.DateTimeField(default=timezone.now)  # Timestamp of the notification
-    is_read = models.BooleanField(default=False)  # Whether the notification has been read
+    def save(self, *args, **kwargs):
+        """Auto-calculate costs and validate before saving"""
+        self.full_clean()
+        self.calculate_costs()
+        super().save(*args, **kwargs)
 
-    def __str__(self):
-        return f"Notification for {self.user} at {self.timestamp}"
+    def get_service_timeline(self):
+        """Generate service steps with timestamps"""
+        if self.booking_type != 'servicing':
+            return None
+            
+        timeline = []
+        if self.primary_service:
+            timeline.append({
+                'service': self.primary_service.name,
+                'estimated_duration': self.primary_service.duration,
+                'cost': self.primary_service.cost
+            })
+        
+        for service in self.recommended_services.all():
+            timeline.append({
+                'service': service.name,
+                'estimated_duration': service.duration,
+                'cost': service.cost
+            })
+        
+        return timeline
+
+    @property
+    def vehicle_details(self):
+        """Structured vehicle data for frontend"""
+        return {
+            'make': self.vehicle.make,
+            'model': self.vehicle.model,
+            'year': self.vehicle.year,
+            'vin': self.vehicle.vin,
+            'image': self.vehicle.image.url if self.vehicle.image else None,
+            'context': self.get_vehicle_context_display()
+        }

@@ -1,6 +1,6 @@
 # services/admin.py
 from django.contrib import admin
-from .models import Vehicle, Servicing, ServiceHistory, Booking, Reminder, Notification
+from .models import Vehicle, Servicing, ServiceHistory, Booking
 
 
 @admin.register(Vehicle)
@@ -20,16 +20,8 @@ class ServiceHistoryAdmin(admin.ModelAdmin):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ['user', 'vehicle', 'service', 'date', 'time', 'is_confirmed']
+    list_display = ['user', 'vehicle', 'primary_service', 'date', 'time', 'status']
     search_fields = ['user__username', 'vehicle__make']
 
-@admin.register(Reminder)
-class ReminderAdmin(admin.ModelAdmin):
-    list_display = ['booking', 'reminder_date', 'reminder_time', 'is_sent']
-    search_fields = ['booking__user__username']
 
-@admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
-    list_display = ['user', 'message', 'timestamp', 'is_read']
-    search_fields = ['user__username', 'message']
 

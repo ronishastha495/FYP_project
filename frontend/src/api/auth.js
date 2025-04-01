@@ -35,9 +35,10 @@ export const login = async (username, password) => {
         if (response.data && response.data.access) {
             localStorage.setItem("accessToken", response.data.access);
             localStorage.setItem("refreshToken", response.data.refresh);
-            localStorage.setItem("role", response.data.role); // Store the role
+            // Make sure your backend returns role in this structure
+            localStorage.setItem("role", response.data.user?.role || response.data.role);
             return response.data;
-        } else {
+        }else {
             throw new Error('Invalid response format');
         }
     } catch (error) {
@@ -54,11 +55,14 @@ export const login = async (username, password) => {
 
 export const register = async (username, email, password, role) => {
     try {
-        await axios.post(REGISTER_URL, { username, email, password, role }, { withCredentials: true });
-        alert("User registered successfully");
+        const response = await axios.post(REGISTER_URL, 
+            { username, email, password, role }, 
+            { withCredentials: true }
+        );
+        return response.data;
     } catch (error) {
         console.error("Registration failed:", error.response?.data);
-        alert("Error registering user");
+        throw error; // Rethrow to handle in the component
     }
 };
 

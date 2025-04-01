@@ -2,37 +2,85 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import backgroundImage from '../../assets/background.jpg';
 import { useNavigate } from 'react-router-dom';
-import { register } from '../../api/auth';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useAuth } from '../../contexts/useAuth';
+import { register as apiRegister } from '../../api/auth'; // Import the direct API function
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [Cpassword, setCPassword] = useState('');
-  const [role, setRole] = useState('');
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: 'customer'
+  });
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { register: contextRegister } = useAuth(); // Get register from context
 
-  const handleRegister = async (event) => {
-    event.preventDefault();
+  // Choose which register function to use (context or direct API)
+  const registerUser = contextRegister || apiRegister;
 
-    if (password !== Cpassword) {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match!');
       return;
     }
 
+    if (formData.password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      const res = await register(username, email, password, role);
+      await registerUser(
+        formData.username,
+        formData.email,
+        formData.password,
+        formData.role
+      );
+      
       toast.success('Registration successful! Redirecting to login...');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
-    } catch (err) {
-      const errorMsg =
-        err?.response?.data?.error || err?.message || 'Registration failed';
-      toast.error(errorMsg);
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (error) {
+      console.error('Registration error:', error);
+      
+      // Handle different error formats
+      if (error.response?.data) {
+        // Handle Django validation errors
+        if (typeof error.response.data === 'object') {
+          for (const [field, errors] of Object.entries(error.response.data)) {
+            if (Array.isArray(errors)) {
+              errors.forEach(err => toast.error(`${field}: ${err}`));
+            } else {
+              toast.error(`${field}: ${errors}`);
+            }
+          }
+        } else {
+          toast.error(error.response.data);
+        }
+      } else if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('Registration failed. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -51,19 +99,21 @@ const Register = () => {
             Create an account
           </h2>
 
-          <form className="space-y-4" onSubmit={handleRegister}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="username" className="block text-sm text-gray-600 mb-1">
                 Username
               </label>
               <input
                 id="username"
+                name="username"
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={formData.username}
+                onChange={handleChange}
                 placeholder="Enter your username"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                 required
+                minLength="3"
               />
             </div>
 
@@ -73,9 +123,10 @@ const Register = () => {
               </label>
               <input
                 id="email"
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleChange}
                 placeholder="Enter your email"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                 required
@@ -84,17 +135,19 @@ const Register = () => {
 
             <div>
               <label htmlFor="password" className="block text-sm text-gray-600 mb-1">
-                Password
+                Password (min 8 characters)
               </label>
               <div className="relative">
                 <input
                   id="password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={handleChange}
                   placeholder="••••••••"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                   required
+                  minLength="8"
                 />
                 <button
                   type="button"
@@ -107,15 +160,16 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="Cpassword" className="block text-sm text-gray-600 mb-1">
+              <label htmlFor="confirmPassword" className="block text-sm text-gray-600 mb-1">
                 Confirm Password
               </label>
               <div className="relative">
                 <input
-                  id="Cpassword"
+                  id="confirmPassword"
+                  name="confirmPassword"
                   type={showPassword ? 'text' : 'password'}
-                  value={Cpassword}
-                  onChange={(e) => setCPassword(e.target.value)}
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
                   placeholder="••••••••"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                   required
@@ -136,8 +190,9 @@ const Register = () => {
               </label>
               <select
                 id="role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                 required
               >
@@ -148,18 +203,29 @@ const Register = () => {
 
             <button
               type="submit"
+              disabled={isLoading}
               style={{
                 background: 'linear-gradient(to right, #E8B65A, #524CAD)',
               }}
-              className="w-full py-2.5 text-white rounded-lg mt-6 hover:opacity-95 transition-opacity"
+              className={`w-full py-2.5 text-white rounded-lg mt-6 hover:opacity-95 transition-opacity ${
+                isLoading ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
             >
-              Register
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Registering...
+                </span>
+              ) : 'Register'}
             </button>
           </form>
 
           <p className="mt-4 text-center text-sm text-gray-600">
             Already have an account?{' '}
-            <a href="/login" className="text-amber-500 hover:text-amber-600">
+            <a href="/login" className="text-amber-500 hover:text-amber-600 font-medium">
               Log in
             </a>
           </p>

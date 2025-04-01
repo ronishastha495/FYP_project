@@ -9,7 +9,8 @@ User = get_user_model()
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ('address', 'city', 'country', 'bio', 'profile_picture')
+        fields = ('user', 'address', 'city', 'country', 'bio', 'profile_picture')
+        read_only_fields = ('user',)
 
 # User Serializer (To Display User Info)
 class UserSerializer(serializers.ModelSerializer):
@@ -17,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'role', 'phone_number', 'profile')
+        fields = ('id', 'username', 'email', 'role', 'phone_number', 'profile_picture', 'profile')
 
 # Service Manager Profile Serializer
 class ServiceManagerProfileSerializer(serializers.ModelSerializer):
@@ -30,6 +31,7 @@ class UpdateUserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = ('address', 'city', 'country', 'bio', 'profile_picture')
+        read_only_fields = ('user',)
 
 # Register Serializer
 class RegisterSerializer(serializers.ModelSerializer):
