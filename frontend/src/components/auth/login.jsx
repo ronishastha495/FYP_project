@@ -29,7 +29,7 @@ const Login = () => {
   }, [isAuthenticated, authLoading, authChecked]);
 
   const redirectBasedOnRole = () => {
-    if (role === 'service_manager') {
+    if (role && role.toLowerCase() === 'service_manager') {
       navigate('/manager');
       toast.success('Welcome back, Manager!');
     } else {

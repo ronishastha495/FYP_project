@@ -82,9 +82,10 @@ export const AuthProvider = ({ children }) => {
             
             if (response && response.access) {
                 setIsAuthenticated(true);
-                const userRole = response.role;
+                const userRole = response.role?.toLowerCase();
                 setRole(userRole);
                 setUser(response.user || username);
+                localStorage.setItem('role', userRole);
                 
                 // Set loading to false only after all state updates
                 setIsLoading(false);

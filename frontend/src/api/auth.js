@@ -170,12 +170,19 @@ export const refresh_token = async () => {
 export const logout = async () => {
     try {
         const token = localStorage.getItem("accessToken");
-        if (token) {
-            // Try to hit the server logout endpoint
-            await axios.post(LOGOUT_URL, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+        if (!token) {
+            console.log("No access token found for logout");
+            return false;
         }
+
+        // Try to hit the server logout endpoint with proper headers
+        await axios.post(LOGOUT_URL, {}, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            withCredentials: true
+        });
         
         // Always clear local storage and cookies regardless of server response
         localStorage.removeItem('accessToken');

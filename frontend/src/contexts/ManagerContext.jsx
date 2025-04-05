@@ -26,9 +26,9 @@ export const ManagerProvider = ({ children }) => {
   const [vehicles, setVehicles] = useState([]);
   const [services, setServices] = useState([]);
   const [serviceHistory, setServiceHistory] = useState([]);
-  // const [bookings, setBookings] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [appointmentsCount, setAppointmentsCount] = useState(0);
-  // const [reminders, setReminders] = useState([]);
+  const [reminders, setReminders] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,7 +51,10 @@ export const ManagerProvider = ({ children }) => {
       setServiceHistory(serviceHistoryData);
 
       const bookingsData = await getBookings();
-      setBookings(bookingsData);
+      if (bookingsData) {
+        setBookings(bookingsData);
+        setAppointmentsCount(bookingsData.length);
+      }
 
       const remindersData = await getReminders();
       setReminders(remindersData);
