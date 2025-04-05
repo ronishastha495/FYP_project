@@ -31,8 +31,33 @@ class LoginView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data
-        return Response({"user": user.username, "message": "Login successful"})
-
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken.for_user(user)
+        response = Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": user.username,
+            "role": user.role,
+            "message": "Login successful"
+        })
+        # Set secure cookies for tokens
+        response.set_cookie(
+            key='access_token',
+            value=str(refresh.access_token),
+            httponly=True,
+            secure=True,
+            samesite='Lax',
+            max_age=60 * 60  # 1 hour
+        )
+        response.set_cookie(
+            key='refresh_token',
+            value=str(refresh),
+            httponly=True,
+            secure=True,
+            samesite='Lax',
+            max_age=24 * 60 * 60  # 1 day
+        )
+        return response
 
 class CurrentUserView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
@@ -52,7 +77,6 @@ class PasswordResetView(generics.GenericAPIView):
         # TODO: Implement email sending logic here
         # For now just return success response
         return Response({"message": "Password reset email sent if account exists"})
-
 
 class ChangePasswordView(generics.GenericAPIView):
     serializer_class = UserSerializer
@@ -75,13 +99,15 @@ class CheckAuthenticationView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        print("Received Authorization Header:", request.headers.get("Authorization"))
         return Response({"authenticated": True, "user": request.user.username})
+
 
 class LogoutView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        request.user.auth_token.delete()
+        # JWT doesn't use auth_token, so just return success
         return Response({"message": "Successfully logged out"})
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
@@ -97,3 +123,11 @@ class ServiceManagerProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user.profile
+
+class UserDetailsView(generics.RetrieveAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = UserProfile.objects.all()
+
+    def get_object(self):
+        return self.request.user

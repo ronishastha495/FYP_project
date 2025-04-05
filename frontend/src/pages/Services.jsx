@@ -2,14 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
-import BookingForm from '../pages/Booking';
+import { useBooking } from '../contexts/BookingContext';
 import { getServices, getVehicles } from '../api/services';
+import { toast } from 'react-toastify';
+import serviceImg from '../assets/serviceimg.jpg';
 
-// Sample logos (replace with actual image URLs or SVGs)
+import hyundaiLogo from '../assets/hyundai.webp';
+import toyotaLogo from '../assets/toyota.webp';
+import bmwLogo from '../assets/bmw.jpeg';
+import fordLogo from '../assets/ford.webp';
+import mercedesLogo from '../assets/mer.jpeg';
+import hondaLogo from '../assets/honda.jpg';
+
 const brandLogos = [
-  { name: 'Maruti', logo: 'https://via.placeholder.com/50?text=Maruti' },
-  { name: 'Tata', logo: 'https://via.placeholder.com/50?text=Tata' },
-  { name: 'Kia', logo: 'https://via.placeholder.com/50?text=Kia' },
+  { name: 'Hyundai', logo: hyundaiLogo },
+  { name: 'Toyota', logo: toyotaLogo },
+  { name: 'BMW', logo: bmwLogo },
+  { name: 'Ford', logo: fordLogo },
+  { name: 'Mercedes', logo: mercedesLogo },
+  { name: 'Honda', logo: hondaLogo },
 ];
 
 const Services = () => {
@@ -26,6 +37,7 @@ const Services = () => {
   const [error, setError] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const navigate = useNavigate();
+  const { selectServiceForBooking, selectVehicleForBooking } = useBooking();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,7 +47,9 @@ const Services = () => {
         setVehicles(vehiclesData);
         setLoading(false);
       } catch (err) {
-        setError('Failed to load data');
+        const errorMessage = err.message || 'Failed to load data';
+        setError(errorMessage);
+        toast.error(errorMessage);
         setLoading(false);
       }
     };
@@ -100,9 +114,14 @@ const Services = () => {
     }
   }, [searchQuery, filterLocation, filterCategory, sortOption, loading]);
 
-  const handleBookAppointment = (item) => {
-    setSelectedService(item);
-    setIsFormOpen(true);
+  const handleBookAppointment = (item, type) => {
+    if (type === 'service') {
+      selectServiceForBooking(item);
+    } else if (type === 'vehicle') {
+      selectVehicleForBooking(item);
+    }
+    // Navigate to booking page
+    navigate('/booking');
   };
 
   const handleFormSubmit = (formData) => {
@@ -146,7 +165,7 @@ const Services = () => {
         {/* Hero Section */}
         <section className="relative bg-gray-200 h-96 flex items-center justify-center">
           <img
-            src="/assets/serviceimg.jpg" // Sample image (replace with actual image path)
+            src={serviceImg}
             alt="Hero"
             className="absolute inset-0 w-full h-full object-cover opacity-70"
           />
@@ -309,7 +328,7 @@ const Services = () => {
                           <p className="text-sm text-gray-600">Feedback: {service.feedback || 'No feedback yet'}</p>
                         </div>
                         <button
-                          onClick={() => handleBookAppointment(service)}
+                          onClick={() => handleBookAppointment(service, 'service')}
                           className="w-full mt-4 px-4 py-2 text-white rounded-md hover:opacity-95 transition-opacity cursor-pointer"
                           style={{ background: 'linear-gradient(to right, #E8B65A, #524CAD)' }}
                         >
@@ -366,7 +385,7 @@ const Services = () => {
                           <p className="text-sm text-gray-600">Feedback: {vehicle.feedback || 'No feedback yet'}</p>
                         </div>
                         <button
-                          onClick={() => handleBookAppointment({ ...vehicle, name: `${vehicle.make} ${vehicle.model}` })}
+                          onClick={() => handleBookAppointment({ ...vehicle, name: `${vehicle.make} ${vehicle.model}` }, 'vehicle')}
                           className="w-full mt-4 px-4 py-2 text-white rounded-md hover:opacity-95 transition-opacity cursor-pointer"
                           style={{ background: 'linear-gradient(to right, #E8B65A, #524CAD)' }}
                         >

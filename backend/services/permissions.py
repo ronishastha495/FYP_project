@@ -1,13 +1,8 @@
 from rest_framework import permissions
 
 class IsServiceManager(permissions.BasePermission):
-    """
-    Custom permission to allow only Service Managers to manage Vehicles and Services.
-    """
-
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "service_manager"
-
+        return request.user.role == 'service_manager'  # Adjust based on your role field
 
 class IsCustomer(permissions.BasePermission):
     """

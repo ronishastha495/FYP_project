@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import { useNavigate } from 'react-router-dom';
+// import { useTracking } from '../contexts/TrackingContext';
+import Navbar from '../components/common/Navbar';
+import Footer from '../components/common/Footer';
 
 const TrackingPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,6 +31,7 @@ const TrackingPage = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar />
+      <div className="container mx-auto px-4 py-8">
 
       <main className="flex-grow container mx-auto py-20 px-4 sm:px-6 lg:px-8">
         <h2 className="text-4xl font-extrabold text-center text-indigo-700 mb-10 tracking-tight">
@@ -84,6 +87,7 @@ const TrackingPage = () => {
         )}
       </main>
 
+      </div>
       <Footer />
     </div>
   );

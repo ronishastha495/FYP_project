@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import backgroundImage from '../../assets/background.jpg';
 import { useAuth } from '../../contexts/useAuth';
 import { Link, useNavigate } from 'react-router-dom';
-import { login as apiLogin } from '../../api/auth'; // Import direct API function
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -13,12 +12,31 @@ const Login = () => {
     username: '',
     password: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
-  const { login_user: contextLogin } = useAuth(); // Get login from context
+  const { login_user: contextLogin, isAuthenticated, isLoading: authLoading, role } = useAuth();
 
-  // Use context login if available, otherwise fallback to direct API
-  const loginUser = contextLogin || apiLogin;
+  // Only check authentication once when component mounts
+  useEffect(() => {
+    if (!authLoading && !authChecked) {
+      if (isAuthenticated) {
+        // Only redirect if we're actually authenticated
+        redirectBasedOnRole();
+      }
+      setAuthChecked(true);
+    }
+  }, [isAuthenticated, authLoading, authChecked]);
+
+  const redirectBasedOnRole = () => {
+    if (role === 'service_manager') {
+      navigate('/manager');
+      toast.success('Welcome back, Manager!');
+    } else {
+      navigate('/');
+      toast.success('Welcome back!');
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,53 +48,54 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    console.log('Login attempt with:', formData); // Debug
-
+    
+    // Prevent multiple submissions
+    if (formSubmitting) return;
+    
+    setFormSubmitting(true);
+    
     try {
-      const response = await loginUser(formData.username, formData.password);
-      console.log('Login response:', response); // Debug
-
+      const response = await contextLogin(formData.username, formData.password);
+      
       if (!response) {
         throw new Error('No response received from server');
       }
 
-      // Handle role-based navigation
-      const role = response.user?.role || response.role;
-      console.log('User role:', role); // Debug
-
-      if (role === 'service_manager') {
-        navigate('/manager');
-        toast.success('Welcome, Manager!');
-      } else {
-        navigate('/');
-        toast.success('Login successful!');
-      }
+      // After successful login, redirect based on role
+      setTimeout(() => {
+        redirectBasedOnRole();
+        setFormSubmitting(false);
+      }, 100);
+      
     } catch (error) {
-      console.error('Login error:', {
-        message: error.message,
-        response: error.response?.data,
-        stack: error.stack
-      });
-
+      console.error("Login error:", error);
+      
+      // Handle different error types
       let errorMessage = 'Login failed. Please try again.';
       
       if (error.response) {
-        // Handle Django error responses
         if (error.response.status === 401) {
           errorMessage = 'Invalid username or password';
-        } else if (error.response.data) {
-          errorMessage = Object.values(error.response.data).join(' ') || errorMessage;
+        } else if (error.response.data && error.response.data.detail) {
+          errorMessage = error.response.data.detail;
         }
-      } else if (error.message.includes('Network Error')) {
-        errorMessage = 'Network error - please check your connection';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
-
+      
       toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
+      setFormSubmitting(false);
     }
-  };
+  }
+
+  // Show loading indicator during initial auth check
+  if (authLoading && !authChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -100,6 +119,7 @@ const Login = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
               required
               autoComplete="username"
+              disabled={formSubmitting}
             />
           </div>
 
@@ -117,11 +137,13 @@ const Login = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                 required
                 autoComplete="current-password"
+                disabled={formSubmitting}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                disabled={formSubmitting}
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
@@ -130,13 +152,13 @@ const Login = () => {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={formSubmitting}
             style={{ background: 'linear-gradient(to right, #E8B65A, #524CAD)' }}
             className={`w-full px-4 py-2 text-white rounded-lg hover:opacity-95 transition-opacity ${
-              isLoading ? 'opacity-80 cursor-not-allowed' : ''
+              formSubmitting ? 'opacity-80 cursor-not-allowed' : ''
             }`}
           >
-            {isLoading ? (
+            {formSubmitting ? (
               <span className="flex items-center justify-center">
                 <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

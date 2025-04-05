@@ -25,9 +25,15 @@ class UserProfile(models.Model):
     country = models.CharField(max_length=100, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_picture_url = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
+        
+    def save(self, *args, **kwargs):
+        if self.profile_picture:
+            self.profile_picture_url = self.profile_picture.url
+        super().save(*args, **kwargs)
 
 # Service Manager Profile (Extra Fields for Service Managers)
 class ServiceManagerProfile(models.Model):

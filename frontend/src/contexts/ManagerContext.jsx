@@ -1,21 +1,21 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import {
-  getServiceManagerProfile,
-  updateServiceManagerProfile,
-  getUsers,
-  getVehicles,
+  // getServiceManagerProfile,
+  // updateServiceManagerProfile,
+  // getUsers,
+  // getVehicles,
   addVehicle,
-  updateVehicle,
-  getServices,
+  // updateVehicle,
+  // getServices,
   addService,
-  updateServiceStatus,
-  getServiceHistory,
-  getBookings,
-  updateBookingStatus,
-  getReminders,
+  // updateServiceStatus,
+  // getServiceHistory,
+  // getBookings,
+  // updateBookingStatus,
+  // getReminders,
   createReminder,
-  getNotifications,
-  markNotificationAsRead,
+  // getNotifications,
+  // markNotificationAsRead,
 } from "../api/serviceManager";
 
 const ManagerContext = createContext();
@@ -26,9 +26,9 @@ export const ManagerProvider = ({ children }) => {
   const [vehicles, setVehicles] = useState([]);
   const [services, setServices] = useState([]);
   const [serviceHistory, setServiceHistory] = useState([]);
-  const [bookings, setBookings] = useState([]);
+  // const [bookings, setBookings] = useState([]);
   const [appointmentsCount, setAppointmentsCount] = useState(0);
-  const [reminders, setReminders] = useState([]);
+  // const [reminders, setReminders] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

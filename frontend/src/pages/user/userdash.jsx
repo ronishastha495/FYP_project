@@ -1,10 +1,10 @@
 // src/pages/user/UserDashboard.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
-// import { useUser } from "../../contexts/UserContext"; // Assuming you have a UserContext
+import { useUser } from "../../contexts/UserContext"; // Assuming you have a UserContext
 
 const UserDash = () => {
-  const { user, appointments, loading } = useUser(); // Mock context data
+  const { user, appointments, loading, error } = useUser();
   const navigate = useNavigate();
 
   if (loading) return (
@@ -14,11 +14,13 @@ const UserDash = () => {
   );
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">
-          {appointments?.length || 0} Appointments Found
+          {appointments ? appointments.length : 'No'} Appointments Found
         </h1>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
@@ -98,6 +100,8 @@ const UserDash = () => {
           </button>
         </div>
       )}
+      </div>
+      <Footer />
     </div>
   );
 };
