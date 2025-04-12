@@ -1,4 +1,3 @@
-# services/serializers.py
 from rest_framework import serializers
 from .models import *
 from account import models as auth_model
@@ -25,7 +24,7 @@ class ServiceHistorySerializer(serializers.ModelSerializer):
 
 # class VehicleBookingSerializer(serializers.ModelSerializer):
 #     # Include the vehicle information in the serializer
-#     vehicle_name = serializers.CharField(source='vehicle.name', read_only=True)
+    vehicle_name = serializers.CharField(source='vehicle.name', read_only=True, allow_null=True)
     
 #     class Meta:
 #         model = VehicleBooking
@@ -57,18 +56,31 @@ class ServiceHistorySerializer(serializers.ModelSerializer):
 #             raise serializers.ValidationError("Invalid status value.")
 #         return value
     
+class VehicleDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vehicle
+        fields = ['make', 'model', 'year']
+
 class VehicleBookingSerializer(serializers.ModelSerializer):
-    vehicle_name = serializers.CharField(source='vehicle.name', read_only=True)
-    
+    vehicle_details = VehicleDetailsSerializer(source='vehicle', read_only=True)
+    get_status_display = serializers.CharField(read_only=True)
+    get_booking_type_display = serializers.SerializerMethodField()
+
     class Meta:
         model = VehicleBooking
-        fields = ['id', 'user', 'vehicle', 'vehicle_name', 'date', 'time', 'status', 'created_at', 'updated_at', 'notes']
-        read_only_fields = ['id', 'created_at', 'updated_at', 'user']
-    
-    def create(self, validated_data):
-        # Automatically set the user from the request
-        validated_data['user'] = self.context['request'].user
-        return super().create(validated_data)
+        fields = [
+            'id', 'user', 'vehicle', 'date', 'time', 'status',
+            'get_status_display', 'get_booking_type_display',
+            'created_at', 'updated_at', 'notes', 'vehicle_details'
+        ]
+        read_only_fields = [
+            'user', 'created_at', 'updated_at',
+            'get_status_display', 'get_booking_type_display',
+            'vehicle_details'
+        ]
+
+    def get_get_booking_type_display(self, obj):
+        return "Vehicle Purchase Inquiry"
     
 
 class FavouriteSerilizier(serializers.ModelSerializer):

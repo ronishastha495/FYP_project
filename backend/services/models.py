@@ -14,6 +14,7 @@ class Vehicle(models.Model):
     image = models.ImageField(upload_to="vehicle_images/", blank=True, null=True)
     price = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    city = models.CharField(max_length=100, blank=True, null=True, help_text="City where the vehicle is available")
     def __str__(self):
         return f"{self.make} {self.model} ({self.year})"
 
@@ -23,6 +24,7 @@ class Servicing(models.Model):
     description = models.TextField(blank=True)  # Description of the service
     cost = models.DecimalField(max_digits=10, decimal_places=2)  # Cost of the service
     image = models.ImageField(upload_to='service_images/', null=True, blank=True)  # Service image
+    city = models.CharField(max_length=100, blank=True, null=True, help_text="City where the service is available")
 
     def __str__(self):
         return self.name
@@ -65,7 +67,9 @@ class Booking(models.Model):
     # Vehicle Reference (for both servicing and purchases)
     vehicle = models.ForeignKey(
         'Vehicle', 
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         verbose_name="Associated Vehicle"
     )
     VEHICLE_CONTEXT_CHOICES = (

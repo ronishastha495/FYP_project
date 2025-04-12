@@ -16,7 +16,7 @@ urlpatterns = [
     path('notifications/', include('notifications.urls')),  # Include URLs from your 'notifications' app
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('chat/', include('chat_app.urls')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    

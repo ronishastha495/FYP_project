@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'services',
     'notifications',
     'dashboard',
-    # 'chat',
+    'chat_app',
 ]
 
 # ASGI_APPLICATION = 'auth.asgi.application'
@@ -101,7 +101,8 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True
+    'BLACKLIST_AFTER_ROTATION': True,
+     "UPDATE_LAST_LOGIN": True
 }
 
 # Email Configuration
@@ -146,7 +147,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'auth.wsgi.application'
+# WSGI_APPLICATION = 'auth.wsgi.application'
+ASGI_APPLICATION = 'auth.asgi.application'
 
 
 # Database

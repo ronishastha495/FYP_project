@@ -8,6 +8,13 @@ from .models import *
 from .serializers import *
 from rest_framework.exceptions import PermissionDenied
 from django.http import JsonResponse
+from django.template.loader import render_to_string
+from django.core.mail import send_mail, EmailMultiAlternatives
+from threading import Thread
+from django.conf import settings
+from datetime import datetime
+import threading
+
 
 class VehicleViewSet(viewsets.ModelViewSet):
     queryset = Vehicle.objects.all()
@@ -21,6 +28,7 @@ class VehicleViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         try:
+            # send_notifcaiton()
             return super().create(request, *args, **kwargs)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -106,25 +114,77 @@ class ServiceHistoryViewSet(viewsets.ModelViewSet):
 #         # Proceed with saving the booking if the user is a customer
 #         serializer.save(user=user)
 
+#async email sending 
+def send_booking_email(subject, to_email, template_name, context):
+    html_content = render_to_string(template_name, context)
+
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=html_content,
+        from_email=settings.EMAIL_HOST_USER,
+        to=[to_email],
+    )
+    email.attach_alternative(html_content, "text/html")
+    
+    # Run email sending in a separate thread
+    threading.Thread(target=email.send, kwargs={'fail_silently': False}).start()
+
 class VehicleBookingViewSet(viewsets.ModelViewSet):
     serializer_class = VehicleBookingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        """Return bookings that belong only to the logged-in user"""
         return VehicleBooking.objects.filter(user=self.request.user)
 
     def get_serializer_context(self):
-        """Pass the request to the serializer context"""
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
 
     def perform_create(self, serializer):
-        """only customers can create bookings"""
         if self.request.user.role != 'customer':
             raise PermissionDenied("Only customers can create bookings.")
-        serializer.save(user=self.request.user)  # Explicitly set user
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'], url_path='confirm')
+    def confirm_booking(self, request, pk=None):
+        booking = self.get_object()
+        booking.status = 'confirmed'
+        booking.save()
+        context = {
+        'user': booking.user.username,
+        'booking': booking,
+        'current_year': datetime.now().year,
+        'support_link': 'https://yourdomain.com/support'  # Change to your actual link
+        }
+
+        send_booking_email(
+        subject="Your Booking is Confirmed",
+        to_email=booking.user.email,
+        template_name="email/customer-templates/booking-confirmation.html",
+        context=context
+        )
+        return Response({'status': 'Booking confirmed'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel_booking(self, request, pk=None):
+        booking = self.get_object()
+        booking.status = 'cancelled'
+        booking.save()
+        context = {
+        'user': booking.user,
+        'booking': booking,
+        'current_year': datetime.now().year,
+        'support_link': 'https://yourdomain.com/support'
+        }
+
+        send_booking_email(
+        subject="Your Booking has been Cancelled",
+        to_email=booking.user.email,
+        template_name="email/customer-templates/booking-cancellation.html",
+        context=context
+    )
+        return Response({'status': 'Booking cancelled'}, status=status.HTTP_200_OK)
 
 #class to handel the crud for UserFavourites
 class FavouritesViewSet(viewsets.ModelViewSet):

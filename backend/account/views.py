@@ -8,6 +8,7 @@ from .serializers import *
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.contrib.auth.models import update_last_login
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -37,7 +38,11 @@ class LoginView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data
         refresh = RefreshToken.for_user(user)
+
+        update_last_login(None, user)
+        
         response = Response({
+            "id" : user.id,
             "access": str(refresh.access_token),
             "refresh": str(refresh),
             "user": user.username,
