@@ -19,14 +19,17 @@ import BookingPage from "./pages/Booking.jsx";
 import TrackingPage from "./pages/Tracking.jsx";
 import AboutUs from "./pages/Aboutus.jsx";
 import ChatPage from "./pages/manager/ManagerChat.jsx";
+import UserChat from "./pages/user/Chat.jsx";
+import ErrorBoundary from "./components/ErrorBoundary"; // Import the ErrorBoundary
 
 function App() {
   return (
     <AuthProvider>
       <UserProvider>
         <BookingProvider>
-            <>
-              <ToastContainer position="top-right" autoClose={2000} />
+          <>
+            <ToastContainer position="top-right" autoClose={2000} />
+            <ErrorBoundary>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
@@ -34,11 +37,11 @@ function App() {
                 <Route path="/services" element={<Services />} />
                 <Route path="/userdash" element={<UserDash />} />
                 <Route path="/booking" element={<BookingPage />} />
+                <Route path="/chat" element={<UserChat />} />
+                <Route path="/chat/messages/:id" element={<UserChat />} /> {/* Added dynamic route */}
                 <Route path="/tracking" element={<TrackingPage />} />
                 <Route path="/aboutus" element={<AboutUs />} />
                 <Route path="/managerchat" element={<ChatPage />} />
-
-
                 <Route
                   path="/manager"
                   element={
@@ -54,7 +57,8 @@ function App() {
                 />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </>
+            </ErrorBoundary>
+          </>
         </BookingProvider>
       </UserProvider>
     </AuthProvider>

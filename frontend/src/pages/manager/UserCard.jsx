@@ -14,14 +14,22 @@ const UsersCard = ({ users }) => (
           </tr>
         </thead>
         <tbody className="text-gray-600 text-sm font-light">
-          {users?.map((user) => (
-            <tr key={user.id} className="border-b border-gray-200 hover:bg-gray-100">
-              <td className="py-3 px-6 text-left">{user.name}</td>
-              <td className="py-3 px-6 text-left">{user.email}</td>
-              <td className="py-3 px-6 text-center">{user.appointmentsCount || 0}</td>
-              <td className="py-3 px-6 text-center">{user.lastActivity || "N/A"}</td>
+          {users?.length > 0 ? (
+            users.map((user) => (
+              <tr key={user.id} className="border-b border-gray-200 hover:bg-gray-100">
+                <td className="py-3 px-6 text-left">{user.name}</td>
+                <td className="py-3 px-6 text-left">{user.email}</td>
+                <td className="py-3 px-6 text-center">{user.appointmentsCount || 0}</td>
+                <td className="py-3 px-6 text-center">{user.lastActivity || "N/A"}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="4" className="py-3 px-6 text-center text-gray-500">
+                No users available.
+              </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

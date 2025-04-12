@@ -56,17 +56,18 @@ export const login = async (username, password) => {
                 timeout: 10000 
             }
         );
-
+        // console.log("login response from server is : ", response    )
         if (!response.data || !response.data.access || !response.data.refresh) {
             console.error("Invalid response structure:", response.data);
             throw new Error('Invalid server response');
         }
-
+        localStorage.setItem("userId", response.data.id)
         localStorage.setItem("accessToken", response.data.access);
         localStorage.setItem("refreshToken", response.data.refresh);
         
         const role = response.data.user?.role || response.data.role || 'user'; 
         localStorage.setItem("role", role);
+        localStorage.setItem("userId", response.data.id)
         
         return {
             access: response.data.access,

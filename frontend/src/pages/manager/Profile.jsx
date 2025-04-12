@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "react-toastify";
 
 const Profile = ({ profile, updateProfile }) => {
   const [error, setError] = useState("");
@@ -8,7 +9,7 @@ const Profile = ({ profile, updateProfile }) => {
     service_center_name: profile?.service_center_name || "",
     experience_years: profile?.experience_years || "",
     location: profile?.location || "",
-    contact_number: profile?.contact_number || ""
+    contact_number: profile?.contact_number || "",
   });
 
   const handleChange = (e) => {
@@ -35,6 +36,10 @@ const Profile = ({ profile, updateProfile }) => {
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
+      toast.error(validationError, {
+        position: "top-right",
+        autoClose: 3000,
+      });
       return;
     }
 
@@ -43,14 +48,18 @@ const Profile = ({ profile, updateProfile }) => {
       const updated = await updateProfile(formData);
       if (updated) {
         setSuccess("Profile updated successfully!");
+        toast.success("Profile updated successfully! 👤", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       } else {
         throw new Error("Failed to update profile. Please try again.");
       }
     } catch (error) {
       let errorMessage = "Failed to update profile";
-      if (error.message.includes('Network Error')) {
+      if (error.message.includes("Network Error")) {
         errorMessage = "Network connection issue. Please check your internet connection and try again.";
-      } else if (error.message.includes('Session expired')) {
+      } else if (error.message.includes("Session expired")) {
         errorMessage = "Your session has expired. Please login again.";
       } else if (error.response?.status === 400) {
         errorMessage = error.response.data.message || "Invalid profile data. Please check your inputs.";
@@ -60,6 +69,10 @@ const Profile = ({ profile, updateProfile }) => {
         errorMessage = error.message || errorMessage;
       }
       setError(errorMessage);
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } finally {
       setLoading(false);
     }
@@ -111,11 +124,11 @@ const Profile = ({ profile, updateProfile }) => {
         <button
           type="submit"
           className={`w-full p-3 text-white rounded-lg transition duration-300 ${
-            loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+            loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
           }`}
           disabled={loading}
         >
-          {loading ? 'Saving...' : 'Save Profile'}
+          {loading ? "Saving..." : "Save Profile"}
         </button>
       </form>
     </div>

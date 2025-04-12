@@ -1,10 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import background from '../../assets/background.jpg';
 
 const BookingConfirmation = ({ booking, onClose }) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+      <div 
+        className="fixed inset-0 bg-cover bg-center blur-sm -z-10"
+        style={{ backgroundImage: `url(${background})` }}
+      />
+      <div className="bg-white rounded-lg p-6 max-w-md w-full bg-opacity-90 backdrop-blur-sm">
         <div className="text-center mb-8">
           <div className="bg-green-100 p-4 rounded-full inline-block mb-3">
             <svg className="h-16 w-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

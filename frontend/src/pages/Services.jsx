@@ -4,8 +4,10 @@ import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 import { useBooking } from '../contexts/BookingContext';
 import { getServices, getVehicles } from '../api/services';
+import { toggleFavorite, fetchFavorites } from '../api/favoriteService';
 import { toast } from 'react-toastify';
 import serviceImg from '../assets/serviceimg.jpg';
+import nepalCities from '../utils/nepalCities';
 
 import hyundaiLogo from '../assets/hyundai.webp';
 import toyotaLogo from '../assets/toyota.webp';
@@ -42,9 +44,20 @@ const Services = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [servicesData, vehiclesData] = await Promise.all([getServices(), getVehicles()]);
+        const [servicesData, vehiclesData, favoritesData] = await Promise.all([
+          getServices(), 
+          getVehicles(),
+          fetchFavorites()
+        ]);
         setServices(servicesData);
         setVehicles(vehiclesData);
+        
+        // Transform favorites data to match our local format
+        const formattedFavorites = favoritesData.map(fav => 
+          `${fav.type}-${fav.type === 'service' ? fav.service : fav.vehicle}`
+        );
+        setFavorites(formattedFavorites);
+        
         setLoading(false);
       } catch (err) {
         const errorMessage = err.message || 'Failed to load data';
@@ -84,13 +97,13 @@ const Services = () => {
         setSuggestions([]);
       }
 
-      // Location Filter
+      // City Filter
       if (filterLocation) {
         filteredServices = filteredServices.filter((service) =>
-          service.location?.toLowerCase().includes(filterLocation.toLowerCase())
+          service.city?.toLowerCase().includes(filterLocation.toLowerCase())
         );
         filteredVehicles = filteredVehicles.filter((vehicle) =>
-          vehicle.location?.toLowerCase().includes(filterLocation.toLowerCase())
+          vehicle.city?.toLowerCase().includes(filterLocation.toLowerCase())
         );
       }
 
@@ -129,12 +142,35 @@ const Services = () => {
     setIsFormOpen(false);
   };
 
-  const toggleFavorite = (id, type) => {
-    setFavorites((prev) =>
-      prev.includes(`${type}-${id}`)
-        ? prev.filter((fav) => fav !== `${type}-${id}`)
-        : [...prev, `${type}-${id}`]
-    );
+  const handleToggleFavorite = async (id, type) => {
+    try {
+      // First update UI optimistically
+      const favoriteKey = `${type}-${id}`;
+      const isCurrentlyFavorite = favorites.includes(favoriteKey);
+      
+      // Update local state immediately for responsive UI
+      setFavorites(prev => 
+        isCurrentlyFavorite
+          ? prev.filter(fav => fav !== favoriteKey)
+          : [...prev, favoriteKey]
+      );
+      
+      // Then make API call
+      const result = await toggleFavorite(type, id);
+      
+      // Show success message
+      toast.success(result.added ? 'Added to favorites' : 'Removed from favorites');
+      
+    } catch (error) {
+      // If API call fails, revert the optimistic update
+      toast.error('Failed to update favorites');
+      // Refresh favorites from server to ensure consistency
+      const refreshedFavorites = await fetchFavorites();
+      const formattedFavorites = refreshedFavorites.map(fav => 
+        `${fav.type}-${fav.type === 'service' ? fav.service : fav.vehicle}`
+      );
+      setFavorites(formattedFavorites);
+    }
   };
 
   const handleSuggestionClick = (suggestion) => {
@@ -213,10 +249,9 @@ const Services = () => {
                   className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-200"
                 >
                   <option value="">Select City</option>
-                  <option value="New Delhi">New Delhi</option>
-                  <option value="Mumbai">Mumbai</option>
-                  <option value="Bangalore">Bangalore</option>
-                  <option value="Chennai">Chennai</option>
+                  {nepalCities.map(city => (
+                    <option key={city.id} value={city.name}>{city.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -284,64 +319,66 @@ const Services = () => {
               </p>
             </section>
 
-            {/* Servicing Section */}
-            {filterCategory !== 'vehicles' && (
-              <section className="mb-12">
-                <h2 className="text-3xl font-bold text-gray-800 mb-6">Repair Services</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {services.map((service) => (
-                    <div
-                      key={service.id}
-                      className="bg-white shadow-lg rounded-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 hover:shadow-xl"
-                    >
-                      <img
-                        src={service.image || 'https://via.placeholder.com/300'}
-                        alt={service.name}
-                        className="w-full h-48 object-cover"
-                      />
-                      <div className="p-4">
-                        <div className="flex justify-between items-center">
-                          <h3 className="text-xl font-semibold text-gray-800">{service.name}</h3>
-                          <button
-                            onClick={() => toggleFavorite(service.id, 'service')}
-                            className="text-gray-500 hover:text-red-500 transition duration-200"
-                          >
-                            {favorites.includes(`service-${service.id}`) ? '❤️' : '🤍'}
-                          </button>
-                        </div>
-                        <p className="text-gray-600 mt-2">{service.description}</p>
-                        <p className="text-indigo-600 font-medium mt-2">${service.cost}</p>
-                        <div className="mt-2 flex items-center">
-                          <span className="text-yellow-500">★</span>
-                          <span className="ml-1 text-gray-700">{service.rating || 'N/A'} (Reviews: {service.reviews?.length || 0})</span>
-                        </div>
-                        <div className="mt-4">
-                          <div className="w-full bg-gray-200 rounded-full h-2.5">
-                            <div
-                              className="bg-indigo-500 h-2.5 rounded-full"
-                              style={{ width: `${service.availability || 70}%` }}
-                            ></div>
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">Availability: {service.availability || 70}%</p>
-                        </div>
-                        <div className="mt-4">
-                          <p className="text-sm text-gray-600">Feedback: {service.feedback || 'No feedback yet'}</p>
-                        </div>
+          {/* Servicing Section */}
+          {filterCategory !== 'vehicles' && (
+            <section className="mb-12">
+              <h2 className="text-3xl font-bold text-gray-800 mb-6">Repair Services</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {services.map((service) => (
+                  <div
+                    key={service.id}
+                    className="bg-white shadow-lg rounded-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 hover:shadow-xl"
+                  >
+                    <img
+                      src={service.image || 'https://via.placeholder.com/300'}
+                      alt={service.name}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="p-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-xl font-semibold text-gray-800">{service.name}</h3>
                         <button
-                          onClick={() => handleBookAppointment(service, 'service')}
-                          className="w-full mt-4 px-4 py-2 text-white rounded-md hover:opacity-95 transition-opacity cursor-pointer"
-                          style={{ background: 'linear-gradient(to right, #E8B65A, #524CAD)' }}
+                          onClick={() => handleToggleFavorite(service.id, 'service')}
+                          className="text-gray-500 hover:text-red-500 transition duration-200"
                         >
-                          Book Appointment
+                          {favorites.includes(`service-${service.id}`) ? '❤️' : '🤍'}
                         </button>
                       </div>
+                      <p className="text-gray-600 mt-2">{service.description}</p>
+                      <p className="text-indigo-600 font-medium mt-2">
+                        ${service.cost} {service.city ? ` - ${service.city}` : ''}
+                      </p>
+                      <div className="mt-2 flex items-center">
+                        <span className="text-yellow-500">★</span>
+                        <span className="ml-1 text-gray-700">{service.rating || 'N/A'} (Reviews: {service.reviews?.length || 0})</span>
+                      </div>
+                      <div className="mt-4">
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div
+                            className="bg-indigo-500 h-2.5 rounded-full"
+                            style={{ width: `${service.availability || 70}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">Availability: {service.availability || 70}%</p>
+                      </div>
+                      <div className="mt-4">
+                        <p className="text-sm text-gray-600">Feedback: {service.feedback || 'No feedback yet'}</p>
+                      </div>
+                      <button
+                        onClick={() => handleBookAppointment(service, 'service')}
+                        className="w-full mt-4 px-4 py-2 text-white rounded-md hover:opacity-95 transition-opacity cursor-pointer"
+                        style={{ background: 'linear-gradient(to right, #E8B65A, #524CAD)' }}
+                      >
+                        Book Appointment
+                      </button>
                     </div>
-                  ))}
-                </div>
-              </section>
-            )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
-            {/* Vehicles for Purchase Section */}
+           {/* Vehicles for Purchase Section */}
             {filterCategory !== 'servicing' && (
               <section>
                 <h2 className="text-3xl font-bold text-gray-800 mb-6">Vehicles for Purchase</h2>
@@ -360,14 +397,16 @@ const Services = () => {
                         <div className="flex justify-between items-center">
                           <h3 className="text-xl font-semibold text-gray-800">{`${vehicle.make} ${vehicle.model} (${vehicle.year})`}</h3>
                           <button
-                            onClick={() => toggleFavorite(vehicle.id, 'vehicle')}
+                            onClick={() => handleToggleFavorite(vehicle.id, 'vehicle')}
                             className="text-gray-500 hover:text-red-500 transition duration-200"
                           >
                             {favorites.includes(`vehicle-${vehicle.id}`) ? '❤️' : '🤍'}
                           </button>
                         </div>
                         <p className="text-gray-600 mt-2">VIN: {vehicle.vin}</p>
-                        <p className="text-indigo-600 font-medium mt-2">${vehicle.price || 'N/A'}</p>
+                        <p className="text-indigo-600 font-medium mt-2">
+                          ${vehicle.price || 'N/A'} {vehicle.city ? ` - ${vehicle.city}` : ''}
+                        </p>
                         <div className="mt-2 flex items-center">
                           <span className="text-yellow-500">★</span>
                           <span className="ml-1 text-gray-700">{vehicle.rating || 'N/A'} (Reviews: {vehicle.reviews?.length || 0})</span>

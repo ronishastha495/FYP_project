@@ -163,7 +163,12 @@ export const bookingService = {
   getServices: async () => {
     try {
       console.log('Fetching services from:', `${API_URL}/servicing/`);
-      const response = await axiosInstance.get(`${API_URL}/servicing/`);
+      const token = localStorage.getItem('accessToken');
+      const response = await axiosInstance.get(`${API_URL}/servicing/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       console.log('Services data received:', response.data);
       return response.data;
     } catch (error) {

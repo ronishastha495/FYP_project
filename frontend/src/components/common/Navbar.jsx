@@ -58,6 +58,14 @@ const Navbar = () => {
               Book Appointment
             </Link>
             <Link
+              to="/chat "
+              className={`${
+                isActive("/chat") ? "text-indigo-600" : "text-gray-600"
+              } hover:text-indigo-600`}
+            >
+              Chat
+            </Link>
+            <Link
               to="/aboutus"
               className={`${
                 isActive("/aboutus") ? "text-indigo-600" : "text-gray-600"

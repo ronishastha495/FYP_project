@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useManager } from "../../contexts/ManagerContext";
+import { toast } from "react-toastify";
+import nepalCities from "../../utils/nepalCities";
 
 const AddServicing = () => {
   const { services, addNewService } = useManager();
@@ -11,14 +13,15 @@ const AddServicing = () => {
     name: "",
     description: "",
     cost: "",
-    image: null
+    image: null,
+    city: "",
   });
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     setServiceForm({
       ...serviceForm,
-      [name]: files ? files[0] : value
+      [name]: files ? files[0] : value,
     });
     setError("");
   };
@@ -29,6 +32,7 @@ const AddServicing = () => {
     if (isNaN(serviceForm.cost) || parseFloat(serviceForm.cost) <= 0) {
       return "Please enter a valid cost";
     }
+    if (!serviceForm.city) return "City is required";
     return null;
   };
 
@@ -40,6 +44,10 @@ const AddServicing = () => {
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
+      toast.error(validationError, {
+        position: "top-right",
+        autoClose: 3000,
+      });
       return;
     }
 
@@ -52,10 +60,18 @@ const AddServicing = () => {
         }
       }
       await addNewService(formData);
-      setSuccess("Service added successfully!");
-      setServiceForm({ name: "", description: "", cost: "", image: null });
+      toast.success("Service added successfully! 🛠️", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      setServiceForm({ name: "", description: "", cost: "", image: null, city: "" });
     } catch (error) {
-      setError(error.message || "Failed to add service");
+      const errorMessage = error.message || "Failed to add service";
+      setError(errorMessage);
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } finally {
       setLoading(false);
     }
@@ -63,18 +79,19 @@ const AddServicing = () => {
 
   return (
     <div id="servicing" className="bg-white shadow-lg rounded-lg p-6 mb-8">
-      <h3 className="text-xl font-semibold text-gray-800 mb-4">Services ({services.length})</h3>
+      <h3 className="text-xl font-semibold text-gray-800 mb-4">Services ({services?.length || 0})</h3>
       <div className="grid gap-4 mb-6">
         {services?.length > 0 ? (
-          services.map((service) => (
+          services.map((service) =>
             service ? (
               <div key={service.id} className="p-4 bg-gray-50 rounded-md border border-gray-200">
-                <p className="text-gray-700">{service.name || 'Unnamed Service'}</p>
-                <p className="text-gray-600">{service.description || 'No description'}</p>
-                <p className="text-blue-600 font-semibold">Rs. {service.cost || '0.00'}</p>
+                <p className="text-gray-700">{service.name || "Unnamed Service"}</p>
+                <p className="text-gray-600">{service.description || "No description"}</p>
+                <p className="text-blue-600 font-semibold">Rs. {service.cost || "0.00"}</p>
+                {service.city && <p className="text-gray-600">City: {service.city}</p>}
               </div>
             ) : null
-          ))
+          )
         ) : (
           <p className="text-gray-600">No services available.</p>
         )}
@@ -111,6 +128,21 @@ const AddServicing = () => {
           disabled={loading}
           required
         />
+        <select
+          name="city"
+          value={serviceForm.city}
+          onChange={handleChange}
+          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+          disabled={loading}
+          required
+        >
+          <option value="">Select City</option>
+          {nepalCities.map((city) => (
+            <option key={city.id} value={city.name}>
+              {city.name}
+            </option>
+          ))}
+        </select>
         <input
           type="file"
           name="image"
@@ -121,10 +153,12 @@ const AddServicing = () => {
         />
         <button
           type="submit"
-          className={`w-full p-3 text-white rounded-lg transition duration-300 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+          className={`w-full p-3 text-white rounded-lg transition duration-300 ${
+            loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+          }`}
           disabled={loading}
         >
-          {loading ? 'Adding Service...' : 'Add Service'}
+          {loading ? "Adding Service..." : "Add Service"}
         </button>
       </form>
     </div>

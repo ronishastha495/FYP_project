@@ -1,74 +1,82 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { fetchUserProfile, fetchFavorites } from '../api/userApi'; // Adjust path as needed
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { fetchUserProfile } from '../api/userApi';
+import { fetchFavorites, toggleFavorite } from '../api/favoriteService';
+import { toast } from 'react-toastify';
 
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  const [appointments, setAppointments] = useState([]);
-  const [reminders, setReminders] = useState([]);
-  const [profile, setProfile] = useState(null);
-  const [favorites, setFavorites] = useState([]);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+
+  const loadFavorites = async () => {
+    try {
+      const favoritesData = await fetchFavorites();
+      setFavorites(favoritesData);
+      return favoritesData;
+    } catch (err) {
+      console.error('Error loading favorites:', err);
+      return [];
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadUserData = async () => {
       try {
-        // Fetch profile data
-        const profileData = await fetchUserProfile();
-        setProfile(profileData);
-
+        setLoading(true);
+        // Fetch user profile data
+        const userData = await fetchUserProfile();
+        setUser(userData);
+        
         // Fetch favorites data
-        const favoritesData = await fetchFavorites();
-        setFavorites(favoritesData);
-
-        // For appointments and reminders, you could add API calls here if endpoints exist
-        // For now, we'll use dummy data as placeholders
-        setAppointments([
-          {
-            id: 1,
-            vehicle: "Toyota Camry",
-            service: "Oil Change",
-            date: "2024-10-05",
-            price: 50,
-            status: "Confirmed",
-          },
-          {
-            id: 2,
-            vehicle: "Honda Civic",
-            service: "Brake Repair",
-            date: "2024-10-07",
-            price: 150,
-            status: "Pending",
-          },
-        ]);
-
-        setReminders([
-          { id: 1, message: "Oil Change due for Toyota Camry", date: "2024-10-05" },
-          { id: 2, message: "Tire Alignment check for Honda Civic", date: "2024-10-10" },
-        ]);
+        await loadFavorites();
+        
+        setLoading(false);
       } catch (err) {
-        setError("Failed to fetch user data. Please try again.");
-      } finally {
+        setError(err.message || 'Failed to load user data');
         setLoading(false);
       }
     };
 
-    fetchData();
+    loadUserData();
   }, []);
 
-  return (
-    <UserContext.Provider value={{ 
-      appointments, 
-      reminders, 
-      profile, 
-      favorites, 
-      loading, 
-      error 
-    }}>
-      {children}
-    </UserContext.Provider>
-  );
+  const updateUser = (userData) => {
+    setUser(userData);
+  };
+
+  const logout = () => {
+    setUser(null);
+    setFavorites([]);
+    // Additional logout logic if needed
+  };
+
+  const handleToggleFavorite = async (type, itemId) => {
+    try {
+      const result = await toggleFavorite(type, itemId);
+      // Refresh favorites list
+      await loadFavorites();
+      return result;
+    } catch (error) {
+      toast.error('Failed to update favorites');
+      throw error;
+    }
+  };
+
+  const value = {
+    user,
+    loading,
+    error,
+    updateUser,
+    logout,
+    favorites,
+    toggleFavorite: handleToggleFavorite,
+    refreshFavorites: loadFavorites
+  };
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
 
-export const useUserContext = () => useContext(UserContext);
+export const useUser = () => useContext(UserContext);

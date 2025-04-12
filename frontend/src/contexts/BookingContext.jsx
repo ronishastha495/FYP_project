@@ -45,18 +45,17 @@ export const BookingProvider = ({ children }) => {
     const loadInitialData = async () => {
       setLoading(true);
       try {
-        // Fetch customer vehicles
-        const customerVehiclesData = await bookingService.getCustomerVehicles();
+        // Fetch all initial data in parallel
+        const [customerVehiclesData, dealershipVehiclesData, servicesData] = await Promise.all([
+          bookingService.getCustomerVehicles(),
+          bookingService.getDealershipVehicles(),
+          bookingService.getServices()
+        ]);
+        
         setCustomerVehicles(customerVehiclesData);
-        
-        // Fetch dealership vehicles
-        const dealershipVehiclesData = await bookingService.getDealershipVehicles();
         setDealershipVehicles(dealershipVehiclesData);
-        
-        // Fetch services
-        const servicesData = await bookingService.getServices();
-        console.log('Services data fetched:', servicesData);
         setServices(servicesData);
+        
       } catch (err) {
         const errorMsg = err.error || 'Failed to load initial data';
         setError(errorMsg);
