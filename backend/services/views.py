@@ -1,18 +1,20 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 from django.core.exceptions import ObjectDoesNotExist
-from .models import Vehicle, Servicing, ServiceHistory, Booking
-from .serializers import VehicleSerializer, ServicingSerializer, ServiceHistorySerializer, BookingSerializer
+from .models import *
+from .serializers import *
+from rest_framework.exceptions import PermissionDenied
+from django.http import JsonResponse
 
 class VehicleViewSet(viewsets.ModelViewSet):
     queryset = Vehicle.objects.all()
     serializer_class = VehicleSerializer
     parser_classes = (MultiPartParser, FormParser)
 
-    def get_permissions(self):
+    def get_permissions(self): 
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]  # Allow anyone to list or retrieve vehicles
         return [permissions.IsAuthenticated()]  # Require authentication for other actions
@@ -23,7 +25,7 @@ class VehicleViewSet(viewsets.ModelViewSet):
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'error': 'Failed to create vehicle'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': f'Failed to create vehicle {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def update(self, request, *args, **kwargs):
         try:
@@ -38,7 +40,7 @@ class VehicleViewSet(viewsets.ModelViewSet):
 class ServicingViewSet(viewsets.ModelViewSet):
     queryset = Servicing.objects.all()
     serializer_class = ServicingSerializer
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -51,7 +53,7 @@ class ServicingViewSet(viewsets.ModelViewSet):
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'error': 'Failed to create service'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': f'Failed to create service {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     queryset = Servicing.objects.all()
     serializer_class = ServicingSerializer
@@ -64,7 +66,7 @@ class ServicingViewSet(viewsets.ModelViewSet):
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'error': 'Failed to create service'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': f'Failed to create service {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ServiceHistoryViewSet(viewsets.ModelViewSet):
     queryset = ServiceHistory.objects.all()
@@ -77,56 +79,90 @@ class ServiceHistoryViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': 'Failed to fetch service history'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class BookingViewSet(viewsets.ModelViewSet):
-    queryset = Booking.objects.all()
-    serializer_class = BookingSerializer
+# class VehicleBookingViewSet(viewsets.ModelViewSet):
+#     """
+#     A simple ViewSet for viewing and editing vehicle bookings.
+#     """
+#     queryset = VehicleBooking.objects.all()
+#     serializer_class = VehicleBookingSerializer
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def get_queryset(self):
+#         """
+#         Optionally restricts the returned bookings to the current user.
+#         """
+#         user = self.request.user
+#         return VehicleBooking.objects.filter(user=user)
+
+#     def perform_create(self, serializer):
+#         """
+#         Override the perform_create method to check that the user is a customer
+#         before creating a booking.
+#         """
+#         user = self.request.user
+#         if user.role != 'customer':  # Check if the user is a customer
+#             raise PermissionDenied("Only customers can create bookings.")
+        
+#         # Proceed with saving the booking if the user is a customer
+#         serializer.save(user=user)
+
+class VehicleBookingViewSet(viewsets.ModelViewSet):
+    serializer_class = VehicleBookingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def create(self, request, *args, **kwargs):
-        try:
-            response = super().create(request, *args, **kwargs)
-            booking = Booking.objects.get(pk=response.data['id'])
-            booking.calculate_total()
-            return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
-        except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'error': 'Failed to create booking'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def get_queryset(self):
+        """Return bookings that belong only to the logged-in user"""
+        return VehicleBooking.objects.filter(user=self.request.user)
 
-    def update(self, request, *args, **kwargs):
-        try:
-            response = super().update(request, *args, **kwargs)
-            booking = Booking.objects.get(pk=response.data['id'])
-            booking.calculate_total()
-            return Response(BookingSerializer(booking).data, status=status.HTTP_200_OK)
-        except ObjectDoesNotExist:
-            return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
-        except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'error': 'Failed to update booking'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def get_serializer_context(self):
+        """Pass the request to the serializer context"""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     def perform_create(self, serializer):
-        try:
-            serializer.save(user=self.request.user)
-        except ValidationError as e:
-            raise ValidationError(detail={'error': str(e)})
+        """only customers can create bookings"""
+        if self.request.user.role != 'customer':
+            raise PermissionDenied("Only customers can create bookings.")
+        serializer.save(user=self.request.user)  # Explicitly set user
 
-    @action(detail=True, methods=['post'])
-    def confirm(self, request, pk=None):
-        booking = self.get_object()
-        if booking.status != 'pending':
-            return Response({'error': 'Booking is not pending'}, status=status.HTTP_400_BAD_REQUEST)
-        booking.status = 'confirmed'
-        booking.save()
-        return Response({'status': 'booking confirmed'})
+#class to handel the crud for UserFavourites
+class FavouritesViewSet(viewsets.ModelViewSet):
+    queryset = UserFavourites.objects.all()
+    serializer_class = FavouriteSerilizier
+    permission_classes = [permissions.IsAuthenticated]
 
-    @action(detail=True, methods=['post'])
-    def cancel(self, request, pk=None):
-        booking = self.get_object()
-        if booking.status == 'completed' or booking.status == 'cancelled':
-            return Response({'error': 'Cannot cancel completed or already cancelled booking'}, 
-                           status=status.HTTP_400_BAD_REQUEST)
-        booking.status = 'cancelled'
-        booking.save()
-        return Response({'status': 'booking cancelled'})
+    def get_queryset(self):
+        # users can only view their own favourite
+        return UserFavourites.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        # user cannot create duplicate favourite
+        user = self.request.user
+        vehicle = serializer.validated_data.get('vehicle')
+        service = serializer.validated_data.get('service')
+        type = serializer.validated_data.get('type')
+
+        # if the user already has this vehicle or service as a favourite
+        if type == 'vehicle' and vehicle:
+            if UserFavourites.objects.filter(user=user, vehicle=vehicle, type=type).exists():
+                return Response({'detail': 'Favorite already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if type == 'service' and service:
+            if UserFavourites.objects.filter(user=user, service=service, type=type).exists():
+                return Response({'detail': 'Favorite already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        #if no duplicates save the data
+        serializer.save(user=user)
+        
+#view to get the total service count for managers
+def returnTotalServiceCount(requst):
+    service_count = Servicing.objects.all().count()
+    return JsonResponse({'service_count': service_count})
+
+def returnTotalAppoitmentCount(request):
+    purchase_booking_count = VehicleBooking.objects.filter(status = 'pending').count()
+    service_booking_count = 0
+    # service_booking_count = VehicleBooking.objects.filter(status = 'pending').count()
+    total_booking_count = purchase_booking_count + service_booking_count
+    return JsonResponse({'total_bookings_count' : total_booking_count})

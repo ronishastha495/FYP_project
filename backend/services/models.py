@@ -12,7 +12,8 @@ class Vehicle(models.Model):
     year = models.CharField(max_length=4)
     vin = models.CharField(max_length=17, unique=True)
     image = models.ImageField(upload_to="vehicle_images/", blank=True, null=True)
-
+    price = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     def __str__(self):
         return f"{self.make} {self.model} ({self.year})"
 
@@ -201,3 +202,45 @@ class Booking(models.Model):
             'image': self.vehicle.image.url if self.vehicle.image else None,
             'context': self.get_vehicle_context_display()
         }
+    
+class VehicleBooking(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    )
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    date = models.DateField()
+    time = models.TimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    vehicle = models.ForeignKey('Vehicle', on_delete=models.CASCADE, verbose_name="Associated Vehicle")
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Booking for {self.vehicle} on {self.date} at {self.time}"
+
+
+class UserFavourites(models.Model):
+    FAVOURITE_CHOICES = (
+        ('service', 'SERVICE'),
+        ('vehicle', 'VEHICLE')
+    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, null=True, blank=True)
+    service = models.ForeignKey(Servicing, on_delete=models.CASCADE, null=True, blank=True)
+    type = models.CharField(max_length=10, choices=FAVOURITE_CHOICES)
+
+    def save(self, *args, **kwargs):
+        print(f" \n data is : \n {self.user} {self.service} {self.vehicle} \n ")
+        if self.type == "vehicle" and not self.vehicle:
+            raise ValueError("Vehicle must be provided if type is 'vehicle' model ")
+        if self.type == "service" and not self.service:
+            raise ValueError("Service must be provided if type is 'service' model ")
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user} - {self.type}"

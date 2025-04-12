@@ -3,7 +3,7 @@ from django.db import models
 # Create your models here.
 from django.db import models
 from django.conf import settings
-from services.models import Booking
+from services.models import *
 
 class UserAnalytics(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

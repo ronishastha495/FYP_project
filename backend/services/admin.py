@@ -1,6 +1,6 @@
 # services/admin.py
 from django.contrib import admin
-from .models import Vehicle, Servicing, ServiceHistory, Booking
+from .models import *
 
 
 @admin.register(Vehicle)
@@ -23,5 +23,6 @@ class BookingAdmin(admin.ModelAdmin):
     list_display = ['user', 'vehicle', 'primary_service', 'date', 'time', 'status']
     search_fields = ['user__username', 'vehicle__make']
 
-
-
+@admin.register(UserFavourites)
+class UserFavouriteAdmin(admin.ModelAdmin):
+    search_fields = ['user']

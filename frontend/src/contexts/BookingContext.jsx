@@ -26,6 +26,7 @@ export const BookingProvider = ({ children }) => {
     setError(null);
     try {
       const data = await bookingService.getBookings();
+      console.log('Bookings data fetched:', data);
       setBookings(data);
       return data;
     } catch (err) {

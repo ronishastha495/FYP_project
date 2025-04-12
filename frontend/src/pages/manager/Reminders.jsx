@@ -16,7 +16,10 @@ const Reminders = ({ users, sendReminder, reminders }) => {
 
   return (
     <div id="reminders" className="bg-white shadow-lg rounded-lg p-6 mb-8">
-      <h3 className="text-xl font-semibold text-gray-800 mb-4">Send Reminder ({reminders.length})</h3>
+      <h3 className="text-xl font-semibold text-gray-800 mb-4">
+  Send Reminder ({reminders ? reminders.length : 0})
+</h3>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <select
           name="userId"

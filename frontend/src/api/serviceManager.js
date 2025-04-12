@@ -8,10 +8,8 @@ const PROFILE_URL = `${BASE_URL}account/service_manager/profile/`;
 const USERS_URL = `${BASE_URL}account/users/`;
 const VEHICLES_URL = `${BASE_URL}services/vehicles/`;
 const SERVICING_URL = `${BASE_URL}services/servicing/`;
-const SERVICE_HISTORY_URL = `${BASE_URL}services/service-histories/`;
+const SERVICE_HISTORY_URL = `${BASE_URL}services/service-history/`;
 const BOOKINGS_URL = `${BASE_URL}services/bookings/`;
-const REMINDERS_URL = `${BASE_URL}services/reminders/`;
-const NOTIFICATIONS_URL = `${BASE_URL}services/notifications/`; // Verify this endpoint exists
 
 // Error handler with enhanced 404 handling
 const MAX_RETRIES = 3;
@@ -19,13 +17,22 @@ const RETRY_DELAY = 1000; // 1 second
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+const getAuthHeaders = () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+        window.location.href = '/login';
+        throw new Error('No access token found');
+    }
+    return {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    };
+};
+
 const getBookings = async () => {
     try {
         const response = await axios.get(BOOKINGS_URL, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                'Content-Type': 'application/json'
-            }
+            headers: getAuthHeaders()
         });
         return response.data;
     } catch (error) {
@@ -80,72 +87,18 @@ const handleApiError = async (error, customMessage, retryCount = 0) => {
     throw new Error(errorMessage);
 };
 
-// Get notifications with improved error handling
-export const getNotifications = async () => {
-    let retryCount = 0;
-    while (retryCount < MAX_RETRIES) {
-        try {
-            const response = await axios.get(NOTIFICATIONS_URL, {
-                headers: { 
-                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-                    'Content-Type': 'application/json'
-                },
-                validateStatus: function (status) {
-                    return status < 500; // Reject only if status is >= 500
-                }
-            });
-            
-            // Handle 404 specifically since we're not rejecting it above
-            if (response.status === 404) {
-                console.warn('Notifications endpoint not found, returning empty array');
-                return [];
-            }
-            
-            return response.data;
-        } catch (error) {
-            const result = await handleApiError(error, 'Error fetching notifications', retryCount);
-            if (result?.shouldRetry) {
-                retryCount = result.retryCount;
-                continue;
-            }
-            
-            // For 404 errors, return empty array instead of throwing error
-            if (error.message.includes('not found')) {
-                return [];
-            }
-            
-            throw error;
-        }
-    }
-};
-
 // Add new service
 export const addService = async (serviceData) => {
     try {
         const response = await axios.post(SERVICING_URL, serviceData, {
-            headers: { 
-                Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-                'Content-Type': 'application/json'
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'multipart/form-data'
             }
         });
         return response.data;
     } catch (error) {
-        handleApiError(error, 'Failed to add service');
-    }
-};
-
-// Mark notification as read
-export const markNotificationAsRead = async (notificationId) => {
-    try {
-        const response = await axios.patch(`${NOTIFICATIONS_URL}${notificationId}/`, { is_read: true }, {
-            headers: { 
-                Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, 'Error marking notification as read');
+        throw await handleApiError(error, 'Failed to add service');
     }
 };
 
@@ -153,28 +106,23 @@ export const markNotificationAsRead = async (notificationId) => {
 export const addVehicle = async (vehicleData) => {
     try {
         const response = await axios.post(VEHICLES_URL, vehicleData, {
-            headers: { 
-                Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-                'Content-Type': 'application/json'
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'multipart/form-data'
             }
         });
+        
+        if (!response.data) {
+            throw new Error('Vehicle creation failed - no data returned');
+        }
+        
+        // Validate required fields
+        if (!response.data.id || !response.data.make || !response.data.model) {
+            throw new Error('Invalid vehicle data received from server');
+        }
+        
         return response.data;
     } catch (error) {
-        handleApiError(error, 'Failed to add vehicle');
-    }
-};
-
-// Create new reminder
-export const createReminder = async (reminderData) => {
-    try {
-        const response = await axios.post(REMINDERS_URL, reminderData, {
-            headers: { 
-                Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, 'Failed to create reminder');
+        throw await handleApiError(error, 'Failed to add vehicle');
     }
 };

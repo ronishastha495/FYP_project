@@ -82,7 +82,8 @@ const BookingList = ({ bookings, onViewBooking }) => {
                               : 'Vehicle Purchase Inquiry'}
                           </p>
                           <p className="text-sm text-gray-700">
-                            {booking.vehicle_details.make} {booking.vehicle_details.model} ({booking.vehicle_details.year})
+                          {booking.vehicle_details?.make || 'Vehicle'} {booking.vehicle_details?.model || 'model placeholder'} {booking.vehicle_details?.year ? `(${booking.vehicle_details.year})` : ''}
+                            {/* {booking.vehicle_details.make} {booking.vehicle_details.model} ({booking.vehicle_details.year}) */}
                           </p>
                           <p className="text-sm text-gray-600 mt-1">
                             {new Date(booking.date).toLocaleDateString()} at {booking.time}

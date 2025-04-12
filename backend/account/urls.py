@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterView, LoginView, PasswordResetView, ChangePasswordView, CheckAuthenticationView, LogoutView, UserProfileView, ServiceManagerProfileView, UserDetailsView
+from .views import *
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -11,4 +11,7 @@ urlpatterns = [
     path('profile/', UserProfileView.as_view(), name='user_profile'),
     path('service_manager/profile/', ServiceManagerProfileView.as_view(), name='service_manager_profile'),
     path('user/', UserDetailsView.as_view(), name='user_details'),
+    path('account/upload-profile-picture/', ProfilePictureUploadView.as_view(), name='upload-profile-picture'),
+    path('api/customer-count/', getUserCount, name='get-customer-count'),
+    path('api/get-manager-name/', getMangerNameFromToken)
 ]

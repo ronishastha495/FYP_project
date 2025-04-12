@@ -1,6 +1,5 @@
 // api/bookingService.js
 import axiosInstance from './axiosConfig';
-import { toast } from 'react-toastify';
 
 const API_URL = 'services';
 
@@ -11,7 +10,6 @@ const BOOKING_URL = `${API_URL}/bookings`;
 const handleError = (error, message) => {
   console.error(message, error);
   if (error.response?.status === 401) {
-    toast.error('Session expired. Please login again.');
     window.location.href = '/login';
   }
   throw error.response?.data || { error: message };
@@ -85,7 +83,15 @@ export const bookingService = {
         throw { error: 'Vehicle, date, and time are required fields' };
       }
 
-      const response = await axiosInstance.post(`${API_URL}/bookings/`, bookingData);
+      const userToken = localStorage.getItem("accessToken");
+
+      const response = await axiosInstance.post(`${API_URL}/bookings/`, bookingData, 
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${userToken}`, //jwt token 
+          },
+    });
       return response.data;
     } catch (error) {
       console.error('Error creating booking:', error);
@@ -157,7 +163,7 @@ export const bookingService = {
   getServices: async () => {
     try {
       console.log('Fetching services from:', `${API_URL}/servicing/`);
-      const response = await api.get(`${API_URL}/servicing/`, getAuthHeaders());
+      const response = await axiosInstance.get(`${API_URL}/servicing/`);
       console.log('Services data received:', response.data);
       return response.data;
     } catch (error) {

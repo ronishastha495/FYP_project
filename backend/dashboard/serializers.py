@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import UserAnalytics, AdminTracking, Rating
-from services.serializers import BookingSerializer
+from services.serializers import VehicleBookingSerializer
 
 class UserAnalyticsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,7 +16,7 @@ class AdminTrackingSerializer(serializers.ModelSerializer):
         fields = ['admin', 'action', 'model', 'timestamp', 'details']
 
 class RatingSerializer(serializers.ModelSerializer):
-    booking = BookingSerializer(read_only=True)
+    booking = VehicleBookingSerializer(read_only=True)
     
     class Meta:
         model = Rating

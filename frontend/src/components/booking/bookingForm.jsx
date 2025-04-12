@@ -4,24 +4,24 @@ import { toast } from 'react-toastify';
 import background from '../../assets/background.jpg';
 
 const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }) => {
-  const { 
-    customerVehicles, 
-    dealershipVehicles, 
-    services, 
+  const {
+    customerVehicles,
+    dealershipVehicles,
+    services,
     loading: contextLoading,
-    createBooking 
+    createBooking
   } = useBooking();
-  
+
   // Log services data for debugging
   useEffect(() => {
     console.log('Services in BookingForm:', services);
   }, [services]);
-  
+
   const [step, setStep] = useState(1);
   const [bookingType, setBookingType] = useState(initialBookingType || (service ? 'servicing' : vehicle ? 'purchase' : ''));
   const [formData, setFormData] = useState({
     booking_type: initialBookingType || (service ? 'servicing' : vehicle ? 'purchase' : ''),
-    vehicle_id: '',
+    vehicle: '',
     vehicle_context: '',
     service_id: service?.id || '',
     date: '',
@@ -62,7 +62,7 @@ const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }
       ...formData,
       booking_type: type,
       vehicle_context: type === 'servicing' ? 'customer_owned' : 'dealership_vehicle',
-      vehicle_id: '',
+      vehicle: '',
       service_id: type === 'servicing' ? service?.id || '' : '',
       purchase_details: type === 'purchase' && vehicle ? `Interested in ${vehicle.make} ${vehicle.model} (${vehicle.year})` : '',
     });
@@ -70,24 +70,28 @@ const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ 
-      ...formData, 
-      [name]: value 
+    setFormData({
+      ...formData,
+      [name]: value
     });
   };
 
   const handleDateSelect = (day) => {
     if (day === null) return;
-    
+
     const selected = new Date(
-      currentMonth.getFullYear(), 
-      currentMonth.getMonth(), 
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
       day
     );
+
+    // Format as YYYY-MM-DD
+    const formattedDate = selected.toISOString().split('T')[0];
+
     setSelectedDate(selected);
-    setFormData({ 
-      ...formData, 
-      date: selected.toISOString().split('T')[0] 
+    setFormData({
+      ...formData,
+      date: formattedDate
     });
   };
 
@@ -166,7 +170,11 @@ const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }
   const handleNext = () => {
     if (!validateCurrentStep()) return;
     setError(null);
+    // setStep(step + 1);
+    // Only proceed to next step if we're not on the last step
+  if (step < totalSteps) {
     setStep(step + 1);
+  }
   };
 
   const handleBack = () => {
@@ -175,23 +183,53 @@ const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    
-    // Prevent multiple submissions
+    console.log('Attempting submission...'); // Debug log
     if (formLoading) return;
+
+    // Final validation
+    if (!formData.vehicle_id) {
+      setError('Please select a vehicle');
+      toast.error('Please select a vehicle');
+      return;
+    }
+
+    if (!formData.date) {
+      setError('Please select a date');
+      toast.error('Please select a date');
+      return;
+    }
+
+    if (!formData.time) {
+      setError('Please select a time');
+      toast.error('Please select a time');
+      return;
+    }
+
     setFormLoading(true);
-    
+
     try {
+      // Prepare the data exactly as the backend expects it
       const bookingData = {
-        ...formData,
-        date: selectedDate,
-        time: selectedTime
+        booking_type: formData.booking_type,
+        vehicle: formData.vehicle_id,
+        vehicle_context: formData.vehicle_context,
+        service_id: formData.service_id || null, // Send null if not applicable
+        date: formData.date, // Already in YYYY-MM-DD format from handleDateSelect
+        time: formData.time,
+        notes: formData.notes,
+        purchase_details: formData.purchase_details || null,
+        trade_in_vehicle_id: formData.trade_in_vehicle_id || null
       };
-      
+
+      console.log('Submitting booking data:', bookingData); // Debug log
+      // Ensure createBooking is being called
+      console.log('Calling createBooking...');
       const response = await createBooking(bookingData);
       toast.success('Booking created successfully!');
       onSubmit?.(response);
       onClose?.();
     } catch (error) {
+      console.error('Booking submission error:', error);
       setError(error.message);
       toast.error(error.message || 'Failed to create booking');
     } finally {
@@ -208,18 +246,17 @@ const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }
       {Array.from({ length: totalSteps }, (_, i) => (
         <div key={i} className="flex flex-col items-center">
           <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              step > i + 1 ? 'bg-green-500 text-white' :
-              step === i + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
-            }`}
+            className={`w-8 h-8 rounded-full flex items-center justify-center ${step > i + 1 ? 'bg-green-500 text-white' :
+                step === i + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
+              }`}
           >
             {i + 1}
           </div>
           <span className="text-xs mt-2">
-            {i === 0 ? 'Type' : 
-             i === 1 ? 'Vehicle' : 
-             i === 2 ? (bookingType === 'servicing' ? 'Service' : 'Details') : 
-             i === 3 ? 'Schedule' : 'Confirm'}
+            {i === 0 ? 'Type' :
+              i === 1 ? 'Vehicle' :
+                i === 2 ? (bookingType === 'servicing' ? 'Service' : 'Details') :
+                  i === 3 ? 'Schedule' : 'Confirm'}
           </span>
         </div>
       ))}
@@ -274,9 +311,8 @@ const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }
                       vehicle_id: vehicle.id,
                       vehicle_context: bookingType === 'servicing' ? 'customer_owned' : 'dealership_vehicle'
                     })}
-                    className={`p-3 border rounded-lg text-left ${
-                      formData.vehicle_id === vehicle.id ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-                    }`}
+                    className={`p-3 border rounded-lg text-left ${formData.vehicle_id === vehicle.id ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                      }`}
                   >
                     <h4 className="font-medium">{vehicle.make} {vehicle.model}</h4>
                     <p className="text-sm text-gray-600">
@@ -307,9 +343,8 @@ const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }
                         ...formData,
                         service_id: svc.id
                       })}
-                      className={`p-3 border rounded-lg text-left ${
-                        formData.service_id === svc.id ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-                      }`}
+                      className={`p-3 border rounded-lg text-left ${formData.service_id === svc.id ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                        }`}
                     >
                       <div className="flex justify-between items-center">
                         <h4 className="font-medium">{svc.name}</h4>
@@ -395,14 +430,13 @@ const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }
                       type="button"
                       disabled={!day || new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day) < new Date().setHours(0, 0, 0, 0)}
                       onClick={() => handleDateSelect(day)}
-                      className={`aspect-square p-2 text-center text-sm rounded-full ${
-                        !day ? 'invisible' : 
-                        new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day) < new Date().setHours(0, 0, 0, 0) ? 'text-gray-300 cursor-not-allowed' :
-                        selectedDate && 
-                        selectedDate.getDate() === day && 
-                        selectedDate.getMonth() === currentMonth.getMonth() && 
-                        selectedDate.getFullYear() === currentMonth.getFullYear() ? 'bg-blue-500 text-white' : 'hover:bg-blue-100'
-                      }`}
+                      className={`aspect-square p-2 text-center text-sm rounded-full ${!day ? 'invisible' :
+                          new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day) < new Date().setHours(0, 0, 0, 0) ? 'text-gray-300 cursor-not-allowed' :
+                            selectedDate &&
+                              selectedDate.getDate() === day &&
+                              selectedDate.getMonth() === currentMonth.getMonth() &&
+                              selectedDate.getFullYear() === currentMonth.getFullYear() ? 'bg-blue-500 text-white' : 'hover:bg-blue-100'
+                        }`}
                     >
                       {day}
                     </button>
@@ -418,9 +452,8 @@ const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }
                     key={time}
                     type="button"
                     onClick={() => handleTimeSelect(time)}
-                    className={`p-2 border rounded text-center text-sm ${
-                      selectedTime === time ? 'bg-blue-500 text-white border-blue-500' : 'border-gray-300 hover:bg-blue-50'
-                    }`}
+                    className={`p-2 border rounded text-center text-sm ${selectedTime === time ? 'bg-blue-500 text-white border-blue-500' : 'border-gray-300 hover:bg-blue-50'
+                      }`}
                   >
                     {time}
                   </button>
@@ -469,8 +502,8 @@ const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div 
-        className="fixed inset-0 bg-cover bg-center blur-sm" 
+      <div
+        className="fixed inset-0 bg-cover bg-center blur-sm"
         style={{ backgroundImage: `url(${background})` }}
       />
       <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative z-10">
@@ -507,7 +540,7 @@ const BookingForm = ({ service, vehicle, initialBookingType, onClose, onSubmit }
                 onClick={handleNext}
                 className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
-                Next
+                {step === totalSteps - 1 ? 'Review' : 'Next'}
               </button>
             ) : (
               <button

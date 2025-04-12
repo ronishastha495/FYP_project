@@ -1,71 +1,66 @@
-// axiosConfig.js - Global Axios Configuration
-import axios from 'axios';
-import { refresh_token } from './auth';
+import axios from "axios";
+import { refresh_token } from "./auth";
 
-// Create a base axios instance with common configuration
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8000/',
+  baseURL: "http://localhost:8000/",
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    "Content-Type": "application/json",
+  },
 });
 
-// Request interceptor to add authentication token to all requests
+// Request interceptor
 axiosInstance.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('accessToken');
+  (config) => {
+    const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  error => {
+  (error) => {
     return Promise.reject(error);
   }
 );
 
-// Response interceptor for token refresh
+// Response interceptor
 axiosInstance.interceptors.response.use(
-  response => response,
-  async error => {
+  (response) => response,
+  async (error) => {
     const originalRequest = error.config;
-    
-    // If error is 401 and we haven't tried to refresh token yet
+
+    // Handle 401 errors
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       try {
-        // Attempt to refresh token
         const refreshed = await refresh_token();
-        
         if (refreshed) {
-          // Update authorization header with new token
-          const token = localStorage.getItem('accessToken');
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          const newToken = localStorage.getItem("accessToken");
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return axiosInstance(originalRequest);
-        } else {
-          // Do not redirect here - let components handle it
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('role');
-          
-          // Throw error with meaningful message
-          return Promise.reject(new Error('Session expired'));
         }
       } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('role');
-        
-        // Throw error with meaningful message
-        return Promise.reject(new Error('Authentication failed'));
+        console.error("Token refresh failed:", refreshError);
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        window.location.href = "/login";
+        return Promise.reject(new Error("Session expired. Please login again."));
       }
     }
-    
-    // For all other errors, just pass them through
-    return Promise.reject(error);
+
+    // Handle network errors
+    if (error.message === 'Network Error') {
+      console.error('Backend server unavailable');
+      return Promise.reject(new Error('Service unavailable. Please try again later.'));
+    }
+
+    // Handle other errors
+    const errorMessage = error.response?.data?.detail || 
+                        error.response?.data?.message || 
+                        error.message || 
+                        'Request failed';
+    return Promise.reject(new Error(errorMessage));
   }
 );
 

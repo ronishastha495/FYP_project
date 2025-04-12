@@ -1,8 +1,13 @@
+from django.http import JsonResponse
 from rest_framework import generics, permissions
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework import generics, permissions
-from .models import UserProfile
-from .serializers import UserProfileSerializer, UserSerializer, RegisterSerializer, LoginSerializer, PasswordResetSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from .serializers import *
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -31,7 +36,6 @@ class LoginView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data
-        from rest_framework_simplejwt.tokens import RefreshToken
         refresh = RefreshToken.for_user(user)
         response = Response({
             "access": str(refresh.access_token),
@@ -57,6 +61,7 @@ class LoginView(generics.GenericAPIView):
             samesite='Lax',
             max_age=24 * 60 * 60  # 1 day
         )
+        print(response)
         return response
 
 class CurrentUserView(generics.RetrieveAPIView):
@@ -111,11 +116,16 @@ class LogoutView(generics.GenericAPIView):
         return Response({"message": "Successfully logged out"})
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
-    serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return UpdateUserProfileSerializer
+        return UserProfileSerializer
+
     def get_object(self):
-        return self.request.user.profile
+        return self.request.user
+
 
 class ServiceManagerProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
@@ -127,7 +137,32 @@ class ServiceManagerProfileView(generics.RetrieveUpdateAPIView):
 class UserDetailsView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
-    queryset = UserProfile.objects.all()
+    queryset = User.objects.all()
 
     def get_object(self):
         return self.request.user
+
+class ProfilePictureUploadView(generics.GenericAPIView):
+    parser_classes = [MultiPartParser]
+    
+    def post(self, request):
+        profile = request.user.profile
+        file = request.FILES.get('profile_picture')
+        
+        if file:
+            profile.profile_picture = file
+            profile.save()
+            return Response({'url': profile.profile_picture.url}, status=200)
+        
+        return Response({'error': 'No file provided'}, status=400)
+    
+def getUserCount(request):
+    customerCount = User.objects.filter(role='customer').count()
+    return JsonResponse({'customer_count': customerCount})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def getMangerNameFromToken(request):
+    user = request.user
+    username = user.username
+    return Response({'username': username})

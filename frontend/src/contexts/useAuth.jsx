@@ -26,11 +26,16 @@ export const AuthProvider = ({ children }) => {
             const response = await is_authenticated();
             if (response && response.authenticated) {
                 setIsAuthenticated(true);
-                // Make sure to set the role from the response
                 const userRole = response.role || localStorage.getItem("role");
+                const userData = {
+                    id: response.user_id,
+                    username: response.user || JSON.parse(localStorage.getItem("user"))?.username,
+                    role: userRole
+                };
                 setRole(userRole);
-                setUser(response.user || null);
+                setUser(userData);
                 localStorage.setItem("role", userRole);
+                localStorage.setItem("user", JSON.stringify(userData));
                 setIsLoading(false);
                 return true;
             }
@@ -75,31 +80,44 @@ export const AuthProvider = ({ children }) => {
     };
 
     const login_user = async (username, password) => {
+        console.log("sdfsdfsd");
+        console.log("entering login_user function");
         setIsLoading(true);
         try {
             const response = await login(username, password);
-            console.log("Login successful:", response);
-            
-            if (response && response.access) {
+            console.log("response:", response);
+    
+    
+            if (response && response?.access) {
+                console.log("hello, reachedin the if else");
                 setIsAuthenticated(true);
-                const userRole = response.role?.toLowerCase();
+                const userRole = response?.role;
+                console.log("userRole:", userRole);
+                const userData = {
+                    id: response.user_id,
+                    username: response.user || username,
+                    role: userRole
+                };
                 setRole(userRole);
-                setUser(response.user || username);
+                console.log("role is", role)
+                setUser(userData);
+                console.log("user is", user)
                 localStorage.setItem('role', userRole);
-                
-                // Set loading to false only after all state updates
+                localStorage.setItem('user', JSON.stringify(userData));
+                localStorage.setItem('accessToken', response.access);
+                localStorage.setItem('refreshToken', response.refresh);
                 setIsLoading(false);
                 return response;
             }
-            
+    
             throw new Error('Invalid response format');
         } catch (error) {
             console.error("Login error:", error);
             setIsLoading(false);
-            // Propagate the specific error message to the UI
             throw error;
         }
     };
+    
         
     const logout_user = async () => {
         setIsLoading(true);

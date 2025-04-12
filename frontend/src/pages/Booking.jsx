@@ -225,7 +225,8 @@ const BookingDetailModal = ({ booking, onClose }) => {
             </div>
             <div>
               <p className="font-bold text-gray-700">Vehicle</p>
-              <p>{booking.vehicle_details.make} {booking.vehicle_details.model} ({booking.vehicle_details.year})</p>
+              <p>{booking.vehicle_details?.make || 'Vehicle'} {booking.vehicle_details?.model || 'model placeholder'} {booking.vehicle_details?.year ? `(${booking.vehicle_details.year})` : ''}
+              </p>
             </div>
           </div>
         </div>

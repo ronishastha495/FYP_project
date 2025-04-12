@@ -13,10 +13,11 @@ import {
   // getBookings,
   // updateBookingStatus,
   // getReminders,
-  createReminder,
+  // createReminder,
   // getNotifications,
   // markNotificationAsRead,
 } from "../api/serviceManager";
+import { getServices, getVehicles } from "../api/services";
 
 const ManagerContext = createContext();
 
@@ -28,18 +29,16 @@ export const ManagerProvider = ({ children }) => {
   const [serviceHistory, setServiceHistory] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [appointmentsCount, setAppointmentsCount] = useState(0);
-  const [reminders, setReminders] = useState([]);
-  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchManagerData = async () => {
     try {
-      const profileData = await getServiceManagerProfile();
-      setProfile(profileData);
+      // const profileData = await getServiceManagerProfile();
+      // setProfile(profileData);
 
-      const usersData = await getUsers();
-      setUsers(usersData);
+      // const usersData = await getUsers();
+      // setUsers(usersData);
 
       const vehiclesData = await getVehicles();
       setVehicles(vehiclesData);
@@ -47,20 +46,20 @@ export const ManagerProvider = ({ children }) => {
       const servicesData = await getServices();
       setServices(servicesData);
 
-      const serviceHistoryData = await getServiceHistory();
-      setServiceHistory(serviceHistoryData);
+      // const serviceHistoryData = await getServiceHistory();
+      // setServiceHistory(serviceHistoryData);
 
-      const bookingsData = await getBookings();
-      if (bookingsData) {
-        setBookings(bookingsData);
-        setAppointmentsCount(bookingsData.length);
-      }
+      // const bookingsData = await getBookings();
+      // if (bookingsData) {
+      //   setBookings(bookingsData);
+      //   setAppointmentsCount(bookingsData.length);
+      // }
 
-      const remindersData = await getReminders();
-      setReminders(remindersData);
+      // const remindersData = await getReminders();
+      // setReminders(remindersData);
 
-      const notificationsData = await getNotifications();
-      setNotifications(notificationsData);
+      // const notificationsData = await getNotifications();
+      // setNotifications(notificationsData);
     } catch (err) {
       setError("Failed to load manager data");
       console.error("Error fetching manager data:", err);
@@ -102,11 +101,14 @@ export const ManagerProvider = ({ children }) => {
   const addNewVehicle = async (vehicleData) => {
     try {
       const newVehicle = await addVehicle(vehicleData);
+      if (!newVehicle) {
+        throw new Error('Vehicle creation failed - no data returned');
+      }
       setVehicles([...vehicles, newVehicle]);
       return newVehicle;
     } catch (err) {
-      handleError(err, "Failed to add new vehicle");
-      return null;
+      handleError(err, err.message || "Failed to add new vehicle");
+      throw err; // Re-throw to allow component to handle
     }
   };
 
@@ -124,11 +126,14 @@ export const ManagerProvider = ({ children }) => {
   const addNewService = async (serviceData) => {
     try {
       const newService = await addService(serviceData);
-      setServices([...services, newService]);
-      return newService;
+      if (newService) {
+        setServices([...services, newService]);
+        return newService;
+      }
+      throw new Error('Service creation failed');
     } catch (err) {
-      handleError(err, "Failed to add new service");
-      return null;
+      handleError(err, err.message || "Failed to add new service");
+      throw err; // Re-throw to allow component to handle
     }
   };
 
@@ -154,28 +159,6 @@ export const ManagerProvider = ({ children }) => {
     }
   };
 
-  const sendUserReminder = async (reminderData) => {
-    try {
-      const newReminder = await createReminder(reminderData);
-      setReminders([...reminders, newReminder]);
-      return newReminder;
-    } catch (err) {
-      handleError(err, "Failed to send user reminder");
-      return null;
-    }
-  };
-
-  const markAsRead = async (notificationId) => {
-    try {
-      const updatedNotification = await markNotificationAsRead(notificationId);
-      setNotifications(notifications.map(n => (n.id === notificationId ? updatedNotification : n)));
-      return updatedNotification;
-    } catch (err) {
-      handleError(err, "Failed to mark notification as read");
-      return null;
-    }
-  };
-
   const value = {
     profile,
     users,
@@ -184,8 +167,6 @@ export const ManagerProvider = ({ children }) => {
     serviceHistory,
     bookings,
     appointmentsCount,
-    reminders,
-    notifications,
     loading,
     error,
     fetchManagerData,
@@ -195,8 +176,6 @@ export const ManagerProvider = ({ children }) => {
     addNewService,
     updateExistingServiceStatus,
     updateExistingBookingStatus,
-    sendUserReminder,
-    markAsRead,
   };
 
   return (

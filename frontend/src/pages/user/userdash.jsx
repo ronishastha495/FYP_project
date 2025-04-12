@@ -1,9 +1,10 @@
 // src/pages/user/UserDash.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
 import backgroundImage from "../../assets/background.jpg"; // Adjust path to your image
+import axios from 'axios';
 
 const UserDash = () => {
   const navigate = useNavigate();
@@ -29,37 +30,343 @@ const UserDash = () => {
     },
   ]);
 
-  const [profile, setProfile] = useState({
-    name: "Ronisha Shrestha",
-    email: "shrestharonisha@gmail.com",
-    phone: "9834353434",
-    address: "Damak",
-    city: "Damak",
-    country: "Nepal",
-    profile_picture_url: "https://via.placeholder.com/100",
-  });
+  function UserProfile() {
+    const [profile, setProfile] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        country: '',
+        profile_picture: '', // Keep this field as it is to handle profile picture
+    });
 
-  const [formData, setFormData] = useState({ ...profile });
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const token = localStorage.getItem("accessToken");
+                const response = await axios.get("http://localhost:8000/account/profile/", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
 
-  const [favorites] = useState([
-    { id: 1, type: "Service", name: "Oil Change", description: "Regular maintenance" },
-    { id: 2, type: "Vehicle", name: "Toyota Corolla", description: "2023 model, available for purchase" },
-  ]);
+                console.log("API Response for profile:", response);
+                const profileData = response.data || {};
+                setProfile(profileData);
+                setFormData(profileData); // Sync formData with profile on load
+            } catch (err) {
+                console.error("Error fetching data for user profile:", err);
+                setError("Failed to load user profile data. Please log in again.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, []);
+
+    const handleProfileChange = (event) => {
+        const { name, value } = event.target;
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value,
+        }));
+    };
+    const handleProfileSubmit = async (event) => {
+        event.preventDefault();
+
+        // Create the request payload with existing profile data if the user doesn't modify a field
+        const updatedProfile = { ...formData };
+
+        // Ensure the profile picture field is retained (if no new picture uploaded)
+        if (!updatedProfile.profile_picture) {
+            updatedProfile.profile_picture = profile.profile_picture; // Retain the old value if not updated
+        }
+
+        try {
+            const token = localStorage.getItem("accessToken");
+            const response = await axios.put(
+                "http://localhost:8000/account/profile/",
+                updatedProfile, // Send updated form data (including existing values)
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            console.log("Profile updated successfully:", response.data);
+            alert("Profile updated successfully!");
+
+            setProfile(response.data); // Update the profile state after successful update
+        } catch (err) {
+            console.error("Error updating profile:", err);
+            alert("Failed to update profile. Please try again.");
+        }
+    };
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (error) {
+        return <div className="text-red-500">{error}</div>;
+    }
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Edit Profile Form */}
+            <div className="bg-gray-800/90 rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-300 mb-4">Edit Profile</h2>
+                <form onSubmit={handleProfileSubmit}>
+                    <div className="mb-4 flex items-center">
+                        {formData.profile_picture_url ? (
+                            <img
+                                src={formData.profile_picture_url}
+                                alt="Profile"
+                                className="w-20 h-20 rounded-full object-cover mr-4"
+                            />
+                        ) : (
+                            <div className="w-20 h-20 rounded-full bg-gray-600 mr-4 flex items-center justify-center">
+                                <span className="text-gray-400">No photo</span>
+                            </div>
+                        )}
+                        <div className="flex-1">
+                            <label className="block text-gray-400 mb-2">Profile Picture</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
+                            />
+                        </div>
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-gray-400 mb-2">Name</label>
+                        <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleProfileChange}
+                            className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
+                        />
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-gray-400 mb-2">Email</label>
+                        <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleProfileChange}
+                            className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
+                        />
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-gray-400 mb-2">Phone</label>
+                        <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone || ""}
+                            onChange={handleProfileChange}
+                            className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
+                        />
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-gray-400 mb-2">Address</label>
+                        <input
+                            type="text"
+                            name="address"
+                            value={formData.address}
+                            onChange={handleProfileChange}
+                            className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
+                        />
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-gray-400 mb-2">City</label>
+                        <input
+                            type="text"
+                            name="city"
+                            value={formData.city}
+                            onChange={handleProfileChange}
+                            className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
+                        />
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-gray-400 mb-2">Country</label>
+                        <input
+                            type="text"
+                            name="country"
+                            value={formData.country}
+                            onChange={handleProfileChange}
+                            className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
+                        />
+                    </div>
+                    <div className="flex justify-end">
+                        <button
+                            type="submit"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Update Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {/* Profile Display */}
+            <div className="bg-gray-800/90 rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-300 mb-4">Profile Information</h2>
+                <div className="space-y-4">
+                    <div>
+                        <p className="text-gray-400">Name</p>
+                        <p className="text-gray-200 font-medium">{profile.name}</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-400">Email</p>
+                        <p className="text-gray-200 font-medium">{profile.email}</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-400">Phone</p>
+                        <p className="text-gray-200 font-medium">{profile.phone}</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-400">Address</p>
+                        <p className="text-gray-200 font-medium">{profile.address}</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-400">City</p>
+                        <p className="text-gray-200 font-medium">{profile.city}</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-400">Country</p>
+                        <p className="text-gray-200 font-medium">{profile.country}</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-400">Profile Picture</p>
+                        {profile.profile_picture_url ? (
+                            <img
+                            src={formData.profile_picture_url || formData.profile_picture}
+                            alt="Profile"
+                            className="w-20 h-20 rounded-full object-cover mr-4"
+                        />                        
+                        ) : (
+                            <p className="text-gray-200 font-medium">No photo</p>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+  // const [profile, setProfile] = useState({
+  //   name: "Ronisha Shrestha Weds Asim Khadka",
+  //   email: "shrestharonisha@gmail.com",
+  //   phone: "9834353434",
+  //   address: "Damak",
+  //   city: "Damak",
+  //   country: "Nepal",
+  //   profile_picture_url: "https://via.placeholder.com/100",
+  // });
+
+  // const [formData, setFormData] = useState({ ...profile });
+
+  function Favorites() {
+    const [favorites, setFavorites] = useState([]); // State to store the favorites
+    const [loading, setLoading] = useState(true); // State to handle loading state
+    const [error, setError] = useState(null); // State to handle any error during the API call
+
+    useEffect(() => {
+      const fetchFavorites = async () => {
+        try {
+          const token = localStorage.getItem("accessToken");
+          const response = await axios.get("http://localhost:8000/services/favourites/", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          console.log("API Response:", response); // Debugging
+
+          // Ensure we extract `data` properly
+          const favoritesList = response.data || []; // Access `data` key safely
+          console.log("Extracted Favorites:", favoritesList); // Debugging
+
+          setFavorites(favoritesList); // Update state properly
+        } catch (err) {
+          console.error("Error fetching data:", err);
+          setError("Failed to load favorites. Please log in again.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchFavorites();
+    }, []);
+
+    // If loading, display a loading message
+    if (loading) {
+      return <div>Loading...</div>;
+    }
+
+    // If there was an error, display the error message
+    if (error) {
+      return <div className="text-red-500">{error}</div>;
+    }
+
+    // Return the favorites data
+    return (
+      <div className="bg-gray-800/90 rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold text-gray-300 mb-4">Favorites</h2>
+        {favorites.length > 0 ? (
+          <div className="space-y-4">
+            {favorites.map((favorite) => (
+              <div key={favorite.id} className="flex justify-between items-center border-b border-gray-700 pb-2">
+                <div>
+                  <p className="text-gray-200 font-medium">{favorite.name} {favorite.year}, {favorite.model} {favorite.description} ({favorite.type})</p>
+                  {favorite.type === "Vehicle" && (
+                    <p className="text-gray-400 text-sm">{favorite.model} ({favorite.year})</p>
+                  )}
+                </div>
+                <button
+                  onClick={() =>
+                    alert(
+                      favorite.type === "Service"
+                        ? `Book ${favorite.name} service`
+                        : `View ${favorite.name} for purchase`
+                    )
+                  }
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {favorite.type === "service" ? "Book Service" : "View Vehicle"}
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6">
+            <h3 className="text-lg font-semibold text-gray-300 mb-2">No Favorites Added</h3>
+            <p className="text-gray-400">
+              Add your favorite services or vehicles to access them quickly!
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // const [favorites] = useState([
+  //   { id: 1, type: "Service", name: "Oil Change", description: "Regular maintenance" },
+  //   { id: 2, type: "Vehicle", name: "Toyota Corolla", year: "2023"  model : "dsadsa" },
+  // ]);
 
   const [reminders] = useState([
     { id: 1, message: "Oil Change due for Toyota Camry", date: "2024-10-05" },
     { id: 2, message: "Tire Alignment check for Honda Civic", date: "2024-10-10" },
   ]);
 
-  const handleProfileChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleProfileSubmit = (e) => {
-    e.preventDefault();
-    setProfile(formData);
-    alert("Profile updated successfully!");
-  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -94,33 +401,29 @@ const UserDash = () => {
             <div className="bg-gray-800/90 rounded-full p-1 flex justify-around mb-8 shadow-md">
               <button
                 onClick={() => setActiveSection("appointments")}
-                className={`px-6 py-2 rounded-full text-sm font-semibold ${
-                  activeSection === "appointments" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"
-                }`}
+                className={`px-6 py-2 rounded-full text-sm font-semibold ${activeSection === "appointments" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"
+                  }`}
               >
                 Appointments
               </button>
               <button
                 onClick={() => setActiveSection("profile")}
-                className={`px-6 py-2 rounded-full text-sm font-semibold ${
-                  activeSection === "profile" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"
-                }`}
+                className={`px-6 py-2 rounded-full text-sm font-semibold ${activeSection === "profile" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"
+                  }`}
               >
                 Profile
               </button>
               <button
                 onClick={() => setActiveSection("favorites")}
-                className={`px-6 py-2 rounded-full text-sm font-semibold ${
-                  activeSection === "favorites" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"
-                }`}
+                className={`px-6 py-2 rounded-full text-sm font-semibold ${activeSection === "favorites" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"
+                  }`}
               >
                 Favorites
               </button>
               <button
                 onClick={() => setActiveSection("reminders")}
-                className={`px-6 py-2 rounded-full text-sm font-semibold ${
-                  activeSection === "reminders" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"
-                }`}
+                className={`px-6 py-2 rounded-full text-sm font-semibold ${activeSection === "reminders" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"
+                  }`}
               >
                 Reminders
               </button>
@@ -154,13 +457,12 @@ const UserDash = () => {
                         <div>${appointment.price}</div>
                         <div>
                           <span
-                            className={`px-2 py-1 rounded-full text-sm ${
-                              appointment.status === "Pending"
-                                ? "bg-red-100 text-red-600"
-                                : appointment.status === "Confirmed"
+                            className={`px-2 py-1 rounded-full text-sm ${appointment.status === "Pending"
+                              ? "bg-red-100 text-red-600"
+                              : appointment.status === "Confirmed"
                                 ? "bg-green-100 text-green-600"
                                 : "bg-blue-100 text-blue-600"
-                            }`}
+                              }`}
                           >
                             {appointment.status}
                           </span>
@@ -187,184 +489,12 @@ const UserDash = () => {
 
             {/* Profile Section */}
             {activeSection === "profile" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Edit Profile Form */}
-                <div className="bg-gray-800/90 rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold text-gray-300 mb-4">Edit Profile</h2>
-                  <form onSubmit={handleProfileSubmit}>
-                    <div className="mb-4 flex items-center">
-                      {formData.profile_picture_url ? (
-                        <img
-                          src={formData.profile_picture_url}
-                          alt="Profile"
-                          className="w-20 h-20 rounded-full object-cover mr-4"
-                        />
-                      ) : (
-                        <div className="w-20 h-20 rounded-full bg-gray-600 mr-4 flex items-center justify-center">
-                          <span className="text-gray-400">No photo</span>
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <label className="block text-gray-400 mb-2">Profile Picture</label>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
-                        />
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-400 mb-2">Name</label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleProfileChange}
-                        className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-400 mb-2">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleProfileChange}
-                        className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-400 mb-2">Phone</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleProfileChange}
-                        className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-400 mb-2">Address</label>
-                      <input
-                        type="text"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleProfileChange}
-                        className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-400 mb-2">City</label>
-                      <input
-                        type="text"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleProfileChange}
-                        className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-400 mb-2">Country</label>
-                      <input
-                        type="text"
-                        name="country"
-                        value={formData.country}
-                        onChange={handleProfileChange}
-                        className="w-full p-2 border border-gray-600 rounded-lg bg-gray-700 text-gray-200"
-                      />
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Update Profile
-                      </button>
-                    </div>
-                  </form>
-                </div>
-                {/* Profile Display */}
-                <div className="bg-gray-800/90 rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold text-gray-300 mb-4">Profile Information</h2>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-gray-400">Name</p>
-                      <p className="text-gray-200 font-medium">{profile.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Email</p>
-                      <p className="text-gray-200 font-medium">{profile.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Phone</p>
-                      <p className="text-gray-200 font-medium">{profile.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Address</p>
-                      <p className="text-gray-200 font-medium">{profile.address}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">City</p>
-                      <p className="text-gray-200 font-medium">{profile.city}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Country</p>
-                      <p className="text-gray-200 font-medium">{profile.country}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">Profile Picture</p>
-                      {profile.profile_picture_url ? (
-                        <img
-                          src={profile.profile_picture_url}
-                          alt="Profile"
-                          className="w-32 h-32 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <p className="text-gray-200 font-medium">No photo</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              < UserProfile />
             )}
 
             {/* Favorites Section */}
             {activeSection === "favorites" && (
-              <div className="bg-gray-800/90 rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-semibold text-gray-300 mb-4">Favorites</h2>
-                {favorites.length > 0 ? (
-                  <div className="space-y-4">
-                    {favorites.map((favorite) => (
-                      <div key={favorite.id} className="flex justify-between items-center border-b border-gray-700 pb-2">
-                        <div>
-                          <p className="text-gray-200 font-medium">{favorite.name} ({favorite.type})</p>
-                          <p className="text-gray-400 text-sm">{favorite.description}</p>
-                        </div>
-                        <button
-                          onClick={() =>
-                            alert(
-                              favorite.type === "Service"
-                                ? `Book ${favorite.name} service`
-                                : `View ${favorite.name} for purchase`
-                            )
-                          }
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          {favorite.type === "Service" ? "Book Service" : "View Vehicle"}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <h3 className="text-lg font-semibold text-gray-300 mb-2">No Favorites Added</h3>
-                    <p className="text-gray-400">
-                      Add your favorite services or vehicles to access them quickly!
-                    </p>
-                  </div>
-                )}
-              </div>
+              <Favorites />
             )}
 
             {/* Reminders Section */}

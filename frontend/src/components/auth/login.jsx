@@ -1,21 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import backgroundImage from '../../assets/background.jpg';
-import { useAuth } from '../../contexts/useAuth';
-import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState, useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import backgroundImage from "../../assets/background.jpg";
+import { useAuth } from "../../contexts/useAuth";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    username: '',
-    password: ''
+    username: "",
+    password: "",
   });
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
-  const { login_user: contextLogin, isAuthenticated, isLoading: authLoading, role } = useAuth();
+  const {
+    login_user: contextLogin,
+    isAuthenticated,
+    isLoading: authLoading,
+    role,
+    user,
+  } = useAuth();
 
   // Only check authentication once when component mounts
   useEffect(() => {
@@ -28,65 +34,86 @@ const Login = () => {
     }
   }, [isAuthenticated, authLoading, authChecked]);
 
+  // Log when user object updates for debugging
+  useEffect(() => {
+    if (user) {
+      console.log("user has been updated to:", user);
+    }
+  }, [user]);
+
+  // Combined effect for role changes: logging and redirection
+  useEffect(() => {
+    if (role) {
+      console.log("role has been updated to:", role);
+      // Only redirect when we have a confirmed login and role
+      if (isAuthenticated && authChecked) {
+        redirectBasedOnRole();
+      }
+    }
+  }, [role, isAuthenticated, authChecked]);
+
   const redirectBasedOnRole = () => {
-    if (role && role.toLowerCase() === 'service_manager') {
-      navigate('/manager');
-      toast.success('Welcome back, Manager!');
+    console.log("Redirecting based on role:", role);
+    console.log("Authentication status:", isAuthenticated);
+    console.log("Auth checked status:", authChecked);
+
+    // Log what redirect would happen based on role value
+    if (role && role === "service_manager") {
+      console.log("REDIRECTING TO /manager");
+      navigate("/manager");
+      toast.success("Welcome back, Manager!");
     } else {
-      navigate('/');
-      toast.success('Welcome back!');
+      console.log("REDIRECTING TO /");
+      navigate("/");
+      toast.success("Welcome back!");
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Prevent multiple submissions
     if (formSubmitting) return;
-    
+
     setFormSubmitting(true);
-    
+
     try {
       const response = await contextLogin(formData.username, formData.password);
-      
+      console.log(response, "response from login page");
       if (!response) {
-        throw new Error('No response received from server');
+        throw new Error("No response received from server");
       }
 
-      // After successful login, redirect based on role
-      setTimeout(() => {
-        redirectBasedOnRole();
-        setFormSubmitting(false);
-      }, 100);
-      
+      // We'll let the useEffect handle redirection now
+      setFormSubmitting(false);
     } catch (error) {
       console.error("Login error:", error);
-      
+
       // Handle different error types
-      let errorMessage = 'Login failed. Please try again.';
-      
+      let errorMessage = "Login failed. Please try again.";
+
       if (error.response) {
         if (error.response.status === 401) {
-          errorMessage = 'Invalid username or password';
+          errorMessage = "Invalid username or password";
         } else if (error.response.data && error.response.data.detail) {
           errorMessage = error.response.data.detail;
         }
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       toast.error(errorMessage);
       setFormSubmitting(false);
     }
-  }
+  };
 
   // Show loading indicator during initial auth check
   if (authLoading && !authChecked) {
@@ -98,16 +125,21 @@ const Login = () => {
   }
 
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center bg-cover bg-center"
       style={{ backgroundImage: `url(${backgroundImage})` }}
     >
       <div className="bg-white/95 backdrop-blur-sm p-8 rounded-xl shadow-lg w-full max-w-md mx-4">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Login to AutoCare</h2>
-        
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+          Login to AutoCare
+        </h2>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Username
             </label>
             <input
@@ -124,12 +156,15 @@ const Login = () => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Password
             </label>
             <div className="relative">
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 id="password"
                 name="password"
                 value={formData.password}
@@ -145,7 +180,11 @@ const Login = () => {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 disabled={formSubmitting}
               >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
               </button>
             </div>
           </div>
@@ -153,26 +192,49 @@ const Login = () => {
           <button
             type="submit"
             disabled={formSubmitting}
-            style={{ background: 'linear-gradient(to right, #E8B65A, #524CAD)' }}
+            style={{
+              background: "linear-gradient(to right, #E8B65A, #524CAD)",
+            }}
             className={`w-full px-4 py-2 text-white rounded-lg hover:opacity-95 transition-opacity ${
-              formSubmitting ? 'opacity-80 cursor-not-allowed' : ''
+              formSubmitting ? "opacity-80 cursor-not-allowed" : ""
             }`}
           >
             {formSubmitting ? (
               <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Logging in...
               </span>
-            ) : 'Login'}
+            ) : (
+              "Login"
+            )}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-amber-500 hover:text-amber-600 font-medium">
+          Don't have an account?{" "}
+          <Link
+            to="/register"
+            className="text-amber-500 hover:text-amber-600 font-medium"
+          >
             Register
           </Link>
         </p>
