@@ -1,12 +1,28 @@
 from django.db import models
-from account.models import User
+from django.conf import settings
+from auth_app.models import *
 
-# Create your models here.
-class Message(models.Model):
-    sender = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)
-    receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE)
-    content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-    read = models.BooleanField(default=False)  
+
+class ChatMessage(models.Model):
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="sent_messages"
+    )
+    receiver = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="received_messages"
+    )
+    message = models.CharField(max_length=10000)
+    is_read = models.BooleanField(default=False)
+    date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['date']
+        verbose_name_plural = "Messages"
+
     def __str__(self):
-        return f"{self.sender} -> {self.receiver}: {self.content[:20]}"
+        return f"{self.sender} to {self.receiver}"

@@ -1,124 +1,83 @@
-from rest_framework import generics
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import render
+from django.db.models import Q
+from rest_framework import status, generics
 from rest_framework.response import Response
-from django.db.models import Q, Max
-from .models import Message
-from .serializers import MessageSerializer
-from django.contrib.auth import get_user_model
-from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
+from .models import User, ChatMessage
+from .serializers import MessageSerializer, ProfileSerializer
 
-User = get_user_model()
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def conversation_list(request):
-    # Get all unique conversations for the current user
-    conversations = Message.objects.filter(
-        Q(sender=request.user) | Q(receiver=request.user)
-    ).values(
-        'sender', 'receiver'
-    ).annotate(
-        last_message_time=Max('timestamp')
-    ).order_by('-last_message_time')
-
-    result = []
-    for conv in conversations:
-        other_user_id = conv['sender'] if conv['sender'] != request.user.id else conv['receiver']
-        try:
-            other_user = User.objects.get(pk=other_user_id)
-            last_message = Message.objects.filter(
-                Q(sender=request.user, receiver=other_user) |
-                Q(sender=other_user, receiver=request.user)
-            ).latest('timestamp')
-            
-            result.append({
-                'other_user': {
-                    'id': other_user.id,
-                    'name': other_user.get_full_name() or other_user.username,
-                    'avatar': other_user.profile.avatar.url if hasattr(other_user, 'profile') else None,
-                    # Removed is_online
-                },
-                'last_message': last_message.content,
-                'last_message_time': last_message.timestamp,
-                'unread_count': Message.objects.filter(
-                    receiver=request.user,
-                    sender=other_user,
-                    read=False
-                ).count()
-            })
-        except User.DoesNotExist:
-            continue
-
-    return Response(result)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def message_list(request):
-    other_user_id = request.query_params.get('user_id')
-    if not other_user_id:
-        return Response({'error': 'user_id parameter is required'}, status=400)
-
-    messages = Message.objects.filter(
-        Q(sender=request.user, receiver=other_user_id) |
-        Q(sender=other_user_id, receiver=request.user)
-    ).order_by('timestamp')
-
-    # Mark messages as read
-    Message.objects.filter(
-        sender=other_user_id,
-        receiver=request.user,
-        read=False
-    ).update(read=True)
-
-    serializer = MessageSerializer(messages, many=True)
-    return Response(serializer.data)
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def mark_messages_as_read(request):
-    sender_id = request.data.get('sender_id')
-    if not sender_id:
-        return Response({'error': 'sender_id is required'}, status=400)
-    
-    Message.objects.filter(
-        sender_id=sender_id,
-        receiver=request.user,
-        read=False
-    ).update(read=True)
-    
-    return Response({'status': 'success'})
-
-class MessageListCreate(generics.ListCreateAPIView):
+class GetMessagesListAPIView(generics.ListAPIView):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        other_user_id = self.request.query_params.get('user_id')
-        if not other_user_id:
-            return Message.objects.none()
+        user = self.request.user
 
-        try:
-            other_user = User.objects.get(id=other_user_id)
-        except User.DoesNotExist:
-            return Message.objects.none()
+        # Fetch all unique users the current user has chatted with
+        message_partners = User.objects.filter(
+            Q(sent_messages__receiver=user) | Q(received_messages__sender=user)
+        ).distinct()
 
-        return Message.objects.filter(
-            Q(sender=self.request.user, receiver=other_user) |
-            Q(sender=other_user, receiver=self.request.user)
-        ).order_by('timestamp')
+        # Collect chat messages between current user and each partner
+        all_messages = ChatMessage.objects.filter(
+            Q(sender=user, receiver__in=message_partners) |
+            Q(sender__in=message_partners, receiver=user)
+        ).order_by('date')
 
-    def perform_create(self, serializer):
-        # Ensure receiver is passed in the request data
-        receiver_id = self.request.data.get('receiver')
-        if not receiver_id:
-            raise ValidationError('Receiver is required')
+        return all_messages
 
-        try:
-            receiver = User.objects.get(id=receiver_id)
-        except User.DoesNotExist:
-            raise ValidationError('Receiver does not exist')
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
-        # Save the message with sender and receiver
-        serializer.save(sender=self.request.user, receiver=receiver)
+class SendMessageCreateAPIView(generics.CreateAPIView):
+    serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated]
 
+
+class ReadMessagesUpdateAPIView(generics.UpdateAPIView):
+    serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        sender_id = self.request.user.id
+        receiver_id = self.kwargs['receiver_id']
+
+        return ChatMessage.objects.filter(
+            Q(sender=sender_id, receiver=receiver_id) | Q(sender=receiver_id, receiver=sender_id),
+            is_read=False
+        )
+
+    def update(self, request, *args, **kwargs):
+        updated_count = self.get_queryset().update(is_read=True)
+        if updated_count:
+            return Response({'message': 'Messages marked as read'})
+        return Response({'message': 'No unread messages found'})
+
+
+class SearchUserAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get("user", "")  # Use "user" as the query parameter
+
+        if query:
+            users = User.objects.filter(
+                Q(username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query)
+            ).exclude(id=request.user.id)
+        else:
+            users = User.objects.none()
+
+        results = [{
+            "id": user.id,
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "profile_picture": user.profile_picture.url if user.profile_picture else ""
+        } for user in users]
+
+        print(f"result is : {results}")
+        return Response(results)

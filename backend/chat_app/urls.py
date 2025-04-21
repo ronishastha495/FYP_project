@@ -1,10 +1,9 @@
-
 from django.urls import path
-from . import views
+from .views import *
 
 urlpatterns = [
-    path('conversations/', views.conversation_list, name='conversation-list'),
-    path('messages/', views.message_list, name='message-list'),
-    path('messages/mark-read/', views.mark_messages_as_read, name='mark-messages-read'),
-    path('messages/create/', views.MessageListCreate.as_view(), name='message-create'),
+    path("get-messages/", GetMessagesListAPIView.as_view()),
+    path('send/', SendMessageCreateAPIView.as_view(), name='send-message'),
+    path('read/<int:receiver_id>/', ReadMessagesUpdateAPIView.as_view(), name='read-messages'),
+    path('search/', SearchUserAPIView.as_view(), name='search-user'),
 ]

@@ -1,8 +1,9 @@
 from django.contrib import admin
-from .models import Message
+from .models import ChatMessage
 
-@admin.register(Message)
-class MessageAdmin(admin.ModelAdmin):
-    list_display = ('sender', 'receiver', 'content', 'timestamp')
-    search_fields = ('sender__username', 'receiver__username', 'content')
-    list_filter = ('timestamp',)
+class ChatMessageAdmin(admin.ModelAdmin):
+    list_display = ('sender', 'receiver', 'message', 'is_read', 'date')
+    list_filter = ('is_read', 'date')
+    search_fields = ('message',)
+
+admin.site.register(ChatMessage, ChatMessageAdmin)
