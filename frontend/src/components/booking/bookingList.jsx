@@ -119,7 +119,7 @@ const BookingList = ({ bookings, onViewBooking }) => {
           )}
         </div>
       </div>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };
