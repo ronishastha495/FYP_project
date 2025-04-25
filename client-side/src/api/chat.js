@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { is_authenticated, refresh_token } from './auth';
+import { isAuthenticated, refreshToken } from './auth';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/';
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';

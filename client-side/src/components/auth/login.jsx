@@ -82,7 +82,7 @@ const Login = () => {
       if (!response) {
         throw new Error("No response received from server");
       }
-
+      toast.success("Logged in successfully!");
       setFormSubmitting(false);
     } catch (error) {
       console.error("Login error:", error);

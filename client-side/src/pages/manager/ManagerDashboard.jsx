@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "../../api/axiosConfig";
 import { useManager } from "../../contexts/ManagerContext";
 import { useAuth } from "../../contexts/useAuth";
 import Footer from "../../components/common/Footer";
@@ -7,7 +7,7 @@ import AddVehicles from "./AddVehicles";
 import AddServicing from "./AddServicing";
 import AddServiceCenter from "./AddServiceCenter";
 import Profile from "./Profile";
-import ChatPage from '../../components/chat/ChatPage' // Import ChatPage
+import ChatPage from '../../components/chat/ChatPage'; // Import ChatPage
 import { FaUsers, FaCar, FaTools, FaUser, FaBuilding, FaComments } from "react-icons/fa";
 import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -51,11 +51,8 @@ const ManagerDashboard = () => {
   useEffect(() => {
     const fetchCustomerCount = async () => {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/auth-app/api/users/", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
-        });
-        const users = res.data;
-        setCustomerCount(users.filter(u => u.role === "customer").length);
+        // No valid users endpoint exists, so set to 0
+        setCustomerCount(0);
       } catch (err) {
         console.error("Failed to fetch customer count:", err);
         setCustomerCount(0);
@@ -72,10 +69,8 @@ const ManagerDashboard = () => {
     if (Array.isArray(bookings) && bookings.length > 0) {
       setBookingsCount(bookings.length);
     } else {
-      axios
-        .get(BOOKINGS_URL, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
-        })
+      axiosInstance
+        .get(BOOKINGS_URL)
         .then(res => setBookingsCount(res.data.length))
         .catch(err => {
           console.error("Failed to fetch bookings:", err);

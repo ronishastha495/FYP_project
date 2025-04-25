@@ -67,4 +67,3 @@ class Servicing(models.Model):
     def __str__(self):
         return f"{self.name} by {self.provided_by.name}" 
 
-

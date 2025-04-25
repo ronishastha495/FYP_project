@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/common/Navbar";
 import Footer from "../../components/common/Footer";
@@ -674,19 +674,19 @@ const UserDash = () => {
             {activeSection === "appointments" && (
               <div className="bg-gray-800/90 rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-300 mb-4">
-                  Service Appointments ({appointments.length})
+                  Service Appointments ({bookings.length})
                 </h2>
                 
-                {loadingAppointments ? (
+                {loading ? (
                   <div className="text-center py-6">
                     <div className="animate-pulse flex justify-center">
                       <div className="h-6 w-6 bg-blue-500 rounded-full"></div>
                     </div>
                     <p className="text-gray-400 mt-4">Loading appointments...</p>
                   </div>
-                ) : appointmentError ? (
+                ) : error ? (
                   <div className="text-center py-6">
-                    <p className="text-red-400 mb-4">{appointmentError}</p>
+                    <p className="text-red-400 mb-4">{error}</p>
                     <button
                       onClick={() => window.location.reload()}
                       className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -694,7 +694,7 @@ const UserDash = () => {
                       Try Again
                     </button>
                   </div>
-                ) : appointments.length > 0 ? (
+                ) : bookings.length > 0 ? (
                   <div className="overflow-x-auto">
                     <div className="grid grid-cols-7 gap-4 text-gray-400 font-semibold border-b border-gray-700 pb-2">
                       <div>ID</div>
@@ -706,7 +706,7 @@ const UserDash = () => {
                       <div>Status</div>
                       <div>Action</div>
                     </div>
-                    {appointments.map((appointment) => (
+                    {bookings.map((appointment) => (
                       <div
                         key={appointment.id}
                         className="grid grid-cols-7 gap-4 py-3 border-b border-gray-700 items-center"

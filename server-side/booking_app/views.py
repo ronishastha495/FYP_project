@@ -1,3 +1,4 @@
+from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework import generics
 from .models import VehicleBooking, ServiceBooking, Favorite
 from .serializers import *
@@ -10,6 +11,22 @@ from rest_framework.views import APIView
 from itertools import chain
 from operator import attrgetter
 from django.db.models import Q
+
+class CustomTokenRefreshView(TokenRefreshView):
+   
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            raise InvalidToken(e.args[0])
+
+        return Response({
+            "access": serializer.validated_data["access"],
+            "refresh": request.data.get("refresh"),  # Return same refresh token
+            "message": "Token refreshed successfully"
+        }, status=status.HTTP_200_OK)
 
 
 class BookVehicleAPIView(APIView):
@@ -245,4 +262,20 @@ class FavoriteToggleView(APIView):
                     "favorite": FavoriteSerializer(favorite).data
                 }, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AuthCheckView(APIView):
+ 
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({
+            "is_authenticated": True,
+            "user": {
+                "id": request.user.id,
+                "username": request.user.username,
+                "email": request.user.email,
+                # Add other user fields as needed
+            }
+        }, status=status.HTTP_200_OK)
+
             

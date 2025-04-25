@@ -1,13 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import {
-  is_authenticated,
-  login,
-  register,
-  logout,
-  refresh_token,
-} from "../api/auth";
+import { login, register, logout, refreshToken } from "../api/auth";
 
 const AuthContext = createContext();
 
@@ -37,41 +31,23 @@ export const AuthProvider = ({ children }) => {
         return false;
       }
 
-      const response = await is_authenticated();
-      if (response?.is_authenticated) {
-        const userRole = response.user.role || localStorage.getItem("role") || "customer";
-        let userData;
-        try {
-          userData = JSON.parse(localStorage.getItem("user")) || {};
-        } catch {
-          userData = {};
-        }
-        const updatedUserData = {
-          id: response.user.id || userData.id,
-          username: response.user.username || userData.username || "Unknown",
-          role: userRole,
-          phone_number: response.user.phone_number || userData.phone_number,
-          address: response.user.address || userData.address,
-          city: response.user.city || userData.city,
-          country: response.user.country || userData.country,
-        };
-        setIsAuthenticated(true);
-        setRole(userRole);
-        setUser(updatedUserData);
-        localStorage.setItem("role", userRole);
-        localStorage.setItem("user", JSON.stringify(updatedUserData));
-        return true;
+      // Simple token presence check - we'll assume valid if token exists
+      // (The token validity will be checked when making actual API calls)
+      const userRole = localStorage.getItem("role") || "customer";
+      let userData;
+      try {
+        userData = JSON.parse(localStorage.getItem("user")) || {};
+      } catch {
+        userData = {};
       }
 
-      const refreshSuccess = await refresh_token();
-      if (refreshSuccess) {
-        return await get_authenticated();
-      }
+      setIsAuthenticated(true);
+      setRole(userRole);
+      setUser(userData);
+      return true;
 
-      throw new Error("Authentication failed");
     } catch (error) {
-      const errorMsg = error.response?.status === 401 ? "Session expired, please log in" : error.message || "Failed to verify authentication";
-      toast.error(errorMsg);
+      console.error("Authentication check error:", error);
       clearLocalStorage();
       setIsAuthenticated(false);
       setRole(null);
@@ -86,16 +62,18 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const response = await login(username, password);
+      console.log("Login response:", response);
       if (response?.access && response?.refresh) {
         const userRole = response.role || "customer";
         const userData = {
-          id: response.id,
-          username: response.user || username,
+          id: response.user?.id || undefined,
+          username: response.user?.username || username,
+          email: response.user?.email || undefined,
+          phone_number: response.user?.phone_number || undefined,
+          address: response.user?.address || undefined,
+          city: response.user?.city || undefined,
+          country: response.user?.country || undefined,
           role: userRole,
-          phone_number: response.phone_number,
-          address: response.address,
-          city: response.city,
-          country: response.country,
         };
         setIsAuthenticated(true);
         setRole(userRole);
@@ -105,7 +83,13 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("role", userRole);
         localStorage.setItem("user", JSON.stringify(userData));
         toast.success("Logged in successfully!");
-        navigate(userRole === "service_manager" ? "/manager" : "/");
+        
+        // Redirect based on role
+        if (userRole === "service_manager") {
+          navigate("/manager");
+        } else {
+          navigate("/");
+        }
         return response;
       }
       throw new Error("Invalid login credentials");

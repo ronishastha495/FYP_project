@@ -9,6 +9,9 @@ urlpatterns = [
     path('service-booking/<uuid:booking_id>/update-status/', UpdateServiceBookingStatusView.as_view(), name='service-booking-update-status'),
     #user's booking
     path('user/bookings/', GetUserBookings.as_view(), name='get_user_bookings'),
+
+    # Token refresh URL
+    path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     
     # Favorites URLs
     path('services/favourites/', FavoriteListView.as_view(), name='favorite-list'),
