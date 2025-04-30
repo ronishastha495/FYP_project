@@ -146,10 +146,26 @@ export const logout = async () => {
 
 export const register = async (userData) => {
   try {
-    const response = await api.post('register/', userData);
+    const formData = new FormData();
+    // Append all user data to FormData
+    Object.entries(userData).forEach(([key, value]) => {
+      if (key === 'profile_picture' && value) {
+        formData.append(key, value); // Append file
+      } else if (value) {
+        formData.append(key, value); // Append other fields
+      }
+    });
+
+    const response = await api.post('register/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Required for file uploads
+      },
+    });
+    console.log('Registration response:', response);
     return response.data;
   } catch (error) {
     console.error('Registration failed:', error);
-    throw error;
+    // Pass the full error response to the frontend
+    throw error.response?.data || { detail: 'Registration failed' };
   }
 };

@@ -48,18 +48,10 @@ class LoginView(generics.GenericAPIView):
         update_last_login(None, user)
         
         response = Response({
-            "id": user.id,
+            "id" : user.id,
             "access": str(refresh.access_token),
             "refresh": str(refresh),
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "phone_number": user.phone_number,
-                "address": user.address,
-                "city": user.city,
-                "country": user.country
-            },
+            "user": user.username,
             "role": user.role,
             "message": "Login successful"
         })

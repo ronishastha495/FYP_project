@@ -1,3 +1,4 @@
+import axios from 'axios';
 import axiosInstance from './axiosConfig';
 import { API_URL } from './config';
 
@@ -146,8 +147,8 @@ const bookingService = {
   // ⭐ Fetch all favorites
   fetchFavorites: async () => {
     try {
-      console.log('Fetching favorites from:', `${BOOKING_API_URL}/services/favourites/`); // Debugging
-      const response = await axiosInstance.get(`${BOOKING_API_URL}/services/favourites/`);
+      console.log('Fetching favorites from:', `${BOOKING_API_URL}/favorites/`); // Debugging
+      const response = await axios.get(`${BOOKING_API_URL}/favorites/`);
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       return handleError(error, 'Failed to fetch favorites');
@@ -159,7 +160,7 @@ const bookingService = {
     try {
       const data = { type: type.toLowerCase() };
       data[type === 'service' ? 'service' : 'vehicle'] = itemId;
-      const response = await axiosInstance.post(`${BOOKING_API_URL}/services/favourites/`, data);
+      const response = await axiosInstance.post(`${BOOKING_API_URL}/favorites/`, data);
       return response.data;
     } catch (error) {
       return handleError(error, `Failed to add ${type} to favorites`);
@@ -169,7 +170,7 @@ const bookingService = {
   // ⭐ Remove a favorite
   removeFavorite: async (favoriteId) => {
     try {
-      const response = await axiosInstance.delete(`${BOOKING_API_URL}/services/favourites/${favoriteId}/`);
+      const response = await axiosInstance.delete(`${BOOKING_API_URL}/favorites/${favoriteId}/`);
       return response.data;
     } catch (error) {
       return handleError(error, 'Failed to remove favorite');
@@ -180,7 +181,7 @@ const bookingService = {
   checkIsFavorite: async (type, itemId) => {
     try {
       const response = await axiosInstance.get(
-        `${BOOKING_API_URL}/services/favourites/check/?type=${type.toLowerCase()}&item_id=${itemId}`
+        `${BOOKING_API_URL}/favorites/check/?type=${type.toLowerCase()}&item_id=${itemId}`
       );
       return response.data.is_favorite;
     } catch (error) {
@@ -204,7 +205,7 @@ const bookingService = {
         payload.vehicle = itemId;
       }
       
-      const response = await axiosInstance.post(`${BOOKING_API_URL}/services/favourites/toggle/`, payload);
+      const response = await axiosInstance.post(`${BOOKING_API_URL}/favorites/toggle/`, payload);
       return response.data;
     } catch (error) {
       return handleError(error, 'Failed to toggle favorite');

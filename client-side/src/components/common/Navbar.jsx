@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Bell, User, LogOut } from "lucide-react";
+import { Bell, User, LogOut, Car } from "lucide-react";
 import { useAuth } from "../../contexts/useAuth";
 import Notification from "./Notification"; // Import the Notification component
+// import logo from "../../assets/logo.png";
+
 
 const Navbar = () => {
   const { isAuthenticated, role, logout_user } = useAuth();
@@ -27,9 +29,15 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <Link to="/" className="text-2xl font-bold text-indigo-600">
-            AutoCare
+        
+          <Link to="/" className="flex items-center space-x-2">
+            <Car className="text-indigo-600 w-6 h-6" /> {/* Car icon */}
+            <span className="text-2xl font-bold">
+              <span className="text-black">Auto</span>
+              <span className="text-indigo-600">Care</span>
+            </span>
           </Link>
+
 
           {/* Navigation Links */}
           <div className="flex space-x-8">

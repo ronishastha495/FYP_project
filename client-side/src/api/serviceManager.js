@@ -4,7 +4,7 @@ const BASE_URL = 'http://127.0.0.1:8000/';
 
 // Account endpoints
 export const PROFILE_URL = `${BASE_URL}auth-app/api/user/profile/`;
-export const SERVICE_MANAGERS_URL = `${BASE_URL}auth-app/api/service-managers/`;
+// export const SERVICE_MANAGERS_URL = `${BASE_URL}auth-app/api/service-managers/`;
 
 // ServiceCenter endpoints
 export const SERVICE_CENTERS_URL = `${BASE_URL}auth-app/api/service-centers/`;  

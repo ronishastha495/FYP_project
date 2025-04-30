@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useBooking } from '../contexts/BookingContext';
-import BookingForm from '../components/booking/bookingForm';
-import BookingList from '../components/booking/BookingList';
-import BookingConfirmation from '../components/booking/BookingConfirmation';
-import { toast } from 'react-toastify';
-import Navbar from '../components/common/Navbar';
-import Footer from '../components/common/Footer';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useBooking } from "../contexts/BookingContext";
+import BookingForm from "../components/booking/bookingForm";
+import BookingList from "../components/booking/BookingList";
+import BookingConfirmation from "../components/booking/BookingConfirmation";
+import { toast } from "react-toastify";
+import Navbar from "../components/common/Navbar";
+import Footer from "../components/common/Footer";
 
 const BookingPage = () => {
   const {
@@ -23,38 +23,60 @@ const BookingPage = () => {
     cancelBooking,
   } = useBooking();
 
+  console.log(
+    "BookingPage - Component render - selectedService:",
+    selectedService
+  );
+  console.log(
+    "BookingPage - Component render - selectedVehicle:",
+    selectedVehicle
+  );
+
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
   const [formData, setFormData] = useState({
-    date: '',
-    time: '',
-    notes: '',
+    date: "",
+    time: "",
+    notes: "",
   });
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchUserBookings().catch((err) => {
-      toast.error('Failed to fetch bookings');
+      toast.error("Failed to fetch bookings");
     });
 
     if ((selectedService || selectedVehicle) && !showBookingForm) {
       setShowBookingForm(true);
     }
-
-    return () => {
-      resetBookingSelection();
-    };
-  }, [fetchUserBookings, selectedService, selectedVehicle, resetBookingSelection, showBookingForm]);
+  }, [
+    fetchUserBookings,
+    selectedService,
+    selectedVehicle,
+    resetBookingSelection,
+    showBookingForm,
+  ]);
 
   useEffect(() => {
     // Only show the error and redirect if the user is trying to access the booking page directly
     // without selecting a service or vehicle first
-    if (!selectedService && !selectedVehicle && !showBookingForm && !bookings.length) {
-      toast.error('Please select a service or vehicle first');
-      navigate('/services');
+    if (
+      !selectedService &&
+      !selectedVehicle &&
+      !showBookingForm &&
+      !bookings.length
+    ) {
+      toast.error("Please select a service or vehicle first");
+      navigate("/services");
     }
-  }, [selectedService, selectedVehicle, showBookingForm, navigate, bookings.length]);
+  }, [
+    selectedService,
+    selectedVehicle,
+    showBookingForm,
+    navigate,
+    bookings.length,
+  ]);
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
@@ -74,15 +96,17 @@ const BookingPage = () => {
           date: formData.date,
           time: formData.time,
           notes: formData.notes,
+          make: selectedVehicle.make,
+         
         });
       }
       setConfirmedBooking(response);
       setShowBookingForm(false);
       resetBookingSelection();
-      setFormData({ date: '', time: '', notes: '' });
-      toast.success('Booking created successfully!');
+      setFormData({ date: "", time: "", notes: "" });
+      toast.success("Booking created successfully!");
     } catch (error) {
-      toast.error(error.error || 'Failed to create booking');
+      toast.error(error.error || "Failed to create booking");
     }
   };
 
@@ -106,7 +130,9 @@ const BookingPage = () => {
   if (loading && !bookings.length) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-2xl text-gray-600 animate-pulse">Loading bookings...</div>
+        <div className="text-2xl text-gray-600 animate-pulse">
+          Loading bookings...
+        </div>
       </div>
     );
   }
@@ -114,7 +140,7 @@ const BookingPage = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
-      <div className="container mx-auto px-4 py-8 bg-white bg-opacity-90 rounded-lg my-4">
+      <div className="container mx-auto px-4 py-20 bg-white bg-opacity-90 rounded-lg my-4">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Vehicle Services</h1>
           <button
@@ -137,9 +163,14 @@ const BookingPage = () => {
               <div className="p-6">
                 <h2 className="text-xl font-semibold mb-4">Your Bookings</h2>
                 {bookings && bookings.length > 0 ? (
-                  <BookingList bookings={bookings} onViewBooking={handleViewBooking} />
+                  <BookingList
+                    bookings={bookings}
+                    onViewBooking={handleViewBooking}
+                  />
                 ) : (
-                  <p className="text-gray-500">You don't have any bookings yet.</p>
+                  <p className="text-gray-500">
+                    You don't have any bookings yet.
+                  </p>
                 )}
               </div>
             </div>
@@ -186,7 +217,10 @@ const BookingPage = () => {
         )}
 
         {confirmedBooking && (
-          <BookingConfirmation booking={confirmedBooking} onClose={handleCloseConfirmation} />
+          <BookingConfirmation
+            booking={confirmedBooking}
+            onClose={handleCloseConfirmation}
+          />
         )}
       </div>
       <Footer />
@@ -194,22 +228,28 @@ const BookingPage = () => {
   );
 };
 
-const BookingDetailModal = ({ booking, onClose, confirmBooking, cancelBooking }) => {
+const BookingDetailModal = ({
+  booking,
+  onClose,
+  confirmBooking,
+  cancelBooking,
+}) => {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
 
-  const bookingType = booking.type === 'Vehicle Purchase' ? 'vehicle' : 'service';
+  const bookingType =
+    booking.type === "Vehicle Purchase" ? "vehicle" : "service";
 
   const handleCancel = async () => {
-    if (window.confirm('Are you sure you want to cancel this booking?')) {
+    if (window.confirm("Are you sure you want to cancel this booking?")) {
       setProcessing(true);
       try {
         await cancelBooking(booking.booking_id, bookingType);
-        toast.success('Booking cancelled successfully');
+        toast.success("Booking cancelled successfully");
         onClose();
       } catch (err) {
-        setError(err.error || 'Failed to cancel booking');
-        toast.error(err.error || 'Failed to cancel booking');
+        setError(err.error || "Failed to cancel booking");
+        toast.error(err.error || "Failed to cancel booking");
       } finally {
         setProcessing(false);
       }
@@ -220,11 +260,11 @@ const BookingDetailModal = ({ booking, onClose, confirmBooking, cancelBooking })
     setProcessing(true);
     try {
       await confirmBooking(booking.booking_id, bookingType);
-      toast.success('Booking confirmed successfully');
+      toast.success("Booking confirmed successfully");
       onClose();
     } catch (err) {
-      setError(err.error || 'Failed to confirm booking');
-      toast.error(err.error || 'Failed to confirm booking');
+      setError(err.error || "Failed to confirm booking");
+      toast.error(err.error || "Failed to confirm booking");
     } finally {
       setProcessing(false);
     }
@@ -235,7 +275,10 @@ const BookingDetailModal = ({ booking, onClose, confirmBooking, cancelBooking })
       <div className="bg-white rounded-lg p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Booking Details</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 text-2xl"
+          >
             ×
           </button>
         </div>
@@ -250,24 +293,29 @@ const BookingDetailModal = ({ booking, onClose, confirmBooking, cancelBooking })
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <p className="font-bold text-gray-700">Booking Type</p>
-              <p>{booking.type === 'Vehicle Service Booking' ? 'Servicing' : 'Purchase'}</p>
+              <p>
+                {booking.type === "Vehicle Service Booking"
+                  ? "Servicing"
+                  : "Purchase"}
+              </p>
             </div>
             <div>
               <p className="font-bold text-gray-700">Status</p>
               <p
                 className={`inline-block px-2 py-1 rounded text-sm ${
-                  booking.status === 'pending'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : booking.status === 'confirmed'
-                    ? 'bg-blue-100 text-blue-800'
-                    : booking.status === 'in_progress'
-                    ? 'bg-purple-100 text-purple-800'
-                    : booking.status === 'completed'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
+                  booking.status === "pending"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : booking.status === "confirmed"
+                    ? "bg-blue-100 text-blue-800"
+                    : booking.status === "in_progress"
+                    ? "bg-purple-100 text-purple-800"
+                    : booking.status === "completed"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
                 }`}
               >
-                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                {booking.status.charAt(0).toUpperCase() +
+                  booking.status.slice(1)}
               </p>
             </div>
             <div>
@@ -278,21 +326,21 @@ const BookingDetailModal = ({ booking, onClose, confirmBooking, cancelBooking })
             </div>
             <div>
               <p className="font-bold text-gray-700">Total Price</p>
-              <p>${booking.total_price || 'N/A'}</p>
+              <p>${booking.total_price || "N/A"}</p>
             </div>
           </div>
-          {booking.type === 'Vehicle Service Booking' && (
+          {booking.type === "Vehicle Service Booking" && (
             <div className="mt-4">
               <p className="font-bold text-gray-700">Service</p>
-              <p>{booking.service?.name || 'N/A'}</p>
+              <p>{booking.service?.name || "N/A"}</p>
             </div>
           )}
-          {booking.type === 'Vehicle Purchase' && (
+          {booking.type === "Vehicle Purchase" && (
             <div className="mt-4">
               <p className="font-bold text-gray-700">Vehicle</p>
               <p>
-                {booking.vehicle?.make || 'N/A'} {booking.vehicle?.model || ''}{' '}
-                {booking.vehicle?.year ? `(${booking.vehicle.year})` : ''}
+                {booking.vehicle?.make || "N/A"} {booking.vehicle?.model || ""}{" "}
+                {booking.vehicle?.year ? `(${booking.vehicle.year})` : ""}
               </p>
             </div>
           )}
@@ -305,7 +353,7 @@ const BookingDetailModal = ({ booking, onClose, confirmBooking, cancelBooking })
         </div>
 
         <div className="flex justify-end space-x-4 mt-6">
-          {booking.status === 'pending' && (
+          {booking.status === "pending" && (
             <>
               <button
                 onClick={handleCancel}
@@ -323,10 +371,10 @@ const BookingDetailModal = ({ booking, onClose, confirmBooking, cancelBooking })
               </button>
             </>
           )}
-          {booking.status !== 'pending' && booking.status !== 'cancelled' && (
+          {booking.status !== "pending" && booking.status !== "cancelled" && (
             <button
               onClick={handleCancel}
-              disabled={processing || booking.status === 'completed'}
+              disabled={processing || booking.status === "completed"}
               className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50 transition duration-200"
             >
               Cancel Booking

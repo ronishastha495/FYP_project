@@ -40,7 +40,7 @@ export const BookingProvider = ({ children }) => {
       setLoading(true);
       try {
         const [customerVehiclesData, dealershipVehiclesData, servicesData] = await Promise.all([
-          bookingService.getCustomerVehicles(),
+          bookingService.getUserBookings(),
           bookingService.getDealershipVehicles(),
           bookingService.getServices(),
         ]);
@@ -48,6 +48,7 @@ export const BookingProvider = ({ children }) => {
         setDealershipVehicles(dealershipVehiclesData);
         setServices(servicesData);
       } catch (err) {
+        console.error('Error loading initial data:', err);
         const errorMsg = err.error || 'Failed to load initial data';
         setError(errorMsg);
         toast.error(errorMsg);

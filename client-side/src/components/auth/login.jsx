@@ -79,9 +79,16 @@ const Login = () => {
     try {
       const response = await contextLogin(formData.username, formData.password);
       console.log("Login response:", response);
+
       if (!response) {
         throw new Error("No response received from server");
       }
+
+      // Check if non_field_errors exist in successful response
+      if (response.non_field_errors && response.non_field_errors.length > 0) {
+        throw new Error(response.non_field_errors[0]);
+      }
+
       toast.success("Logged in successfully!");
       setFormSubmitting(false);
     } catch (error) {
@@ -92,8 +99,12 @@ const Login = () => {
       if (error.response) {
         if (error.response.status === 401) {
           errorMessage = "Invalid username or password";
-        } else if (error.response.data && error.response.data.detail) {
-          errorMessage = error.response.data.detail;
+        } else if (error.response.data) {
+          if (error.response.data.non_field_errors) {
+            errorMessage = error.response.data.non_field_errors[0];
+          } else if (error.response.data.detail) {
+            errorMessage = error.response.data.detail;
+          }
         }
       } else if (error.message) {
         errorMessage = error.message;

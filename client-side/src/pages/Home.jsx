@@ -26,6 +26,7 @@ const Home = () => {
           <a
             href="/services"
             className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            style={{ background: "linear-gradient(to right, #E8B65A, #524CAD)" }}
           >
             Get Started
           </a>
@@ -94,15 +95,15 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-6 bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
               <p className="text-gray-600 italic mb-4">"Easy scheduling!"</p>
-              <p className="font-semibold text-gray-800">John D.</p>
+              <p className="font-semibold text-gray-800">Ronisha Shrestha</p>
             </div>
             <div className="p-6 bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
               <p className="text-gray-600 italic mb-4">"Transparent pricing!"</p>
-              <p className="font-semibold text-gray-800">Sarah M.</p>
+              <p className="font-semibold text-gray-800">Ayusha Shrestha</p>
             </div>
             <div className="p-6 bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-              <p className="text-gray-600 italic mb-4">"Great search feature!"</p>
-              <p className="font-semibold text-gray-800">David W.</p>
+              <p className="text-gray-600 italic mb-4">"Easy Navigation!"</p>
+              <p className="font-semibold text-gray-800">Sirjana </p>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useManager } from "../../contexts/ManagerContext";
+import { useAuth } from "../../contexts/useAuth";
 import axios from "axios";
 
 const AddServiceCenter = () => {
@@ -11,31 +12,18 @@ const AddServiceCenter = () => {
     deleteExistingServiceCenter,
   } = useManager();
 
+  const { user } = useAuth(); // Get logged-in manager info
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     location: "",
-    center_manager: "",
+    center_manager: user?.id || "", // Auto-set to logged-in manager's ID
     center_logo: null,
   });
-  const [managers, setManagers] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
-
-  // Fetch service managers for center_manager dropdown
-  useEffect(() => {
-    const fetchManagers = async () => {
-      try {
-        const res = await axios.get("http://127.0.0.1:8000/auth-app/api/service-managers/", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
-        });
-        setManagers(res.data);
-      } catch (err) {
-        toast.error("Failed to fetch service managers");
-      }
-    };
-    fetchManagers();
-  }, []);
 
   // Populate form when editing
   useEffect(() => {
@@ -46,7 +34,7 @@ const AddServiceCenter = () => {
           name: center.name || "",
           description: center.description || "",
           location: center.location || "",
-          center_manager: center.center_manager?.username || "",
+          center_manager: center.center_manager?.id || user?.id || "", // Keep existing or fallback to current user
           center_logo: null,
         });
       }
@@ -55,11 +43,11 @@ const AddServiceCenter = () => {
         name: "",
         description: "",
         location: "",
-        center_manager: "",
+        center_manager: user?.id || "", // Reset to current user when not editing
         center_logo: null,
       });
     }
-  }, [editingId, serviceCenters]);
+  }, [editingId, serviceCenters, user]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -74,8 +62,8 @@ const AddServiceCenter = () => {
     setLoading(true);
 
     // Validate required fields
-    if (!formData.name || !formData.description || !formData.location || !formData.center_manager) {
-      toast.error("All fields (Name, Description, Location, Center Manager) are required");
+    if (!formData.name || !formData.description || !formData.location) {
+      toast.error("Name, Description, and Location are required");
       setLoading(false);
       return;
     }
@@ -90,11 +78,6 @@ const AddServiceCenter = () => {
         data.append("center_logo", formData.center_logo);
       }
 
-      // Debug: Log formData
-      for (let pair of data.entries()) {
-        console.log(`${pair[0]}: ${pair[1]}`);
-      }
-
       if (editingId) {
         await updateExistingServiceCenter(editingId, data);
         toast.success("Service center updated successfully!");
@@ -107,7 +90,7 @@ const AddServiceCenter = () => {
         name: "",
         description: "",
         location: "",
-        center_manager: "",
+        center_manager: user?.id || "",
         center_logo: null,
       });
     } catch (error) {
@@ -193,23 +176,25 @@ const AddServiceCenter = () => {
               />
             </div>
             
+            {/* Manager Field - Read-only with hidden ID */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Center Manager</label>
-              <select
+              <label className="block text-sm font-medium text-gray-700">Manager</label>
+              <div className="flex items-center gap-2">
+                <div className="bg-orange-500 rounded-full w-8 h-8 flex items-center justify-center text-white">
+                  {user?.username?.charAt(0) || "M"}
+                </div>
+                <input
+                  type="text"
+                  value={user?.username || "Manager"}
+                  readOnly
+                  className="flex-1 p-3 border border-gray-300 rounded-lg bg-gray-100"
+                />
+              </div>
+              <input
+                type="hidden"
                 name="center_manager"
                 value={formData.center_manager}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white"
-                disabled={loading}
-              >
-                <option value="">Select Manager</option>
-                {managers.map((manager) => (
-                  <option key={manager.username} value={manager.username}>
-                    {manager.username}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
             
             <div className="space-y-2">

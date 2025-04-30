@@ -22,7 +22,7 @@ export const ManagerProvider = ({ children }) => {
   const [services, setServices] = useState([]);
   const [serviceCenters, setServiceCenters] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null);
 
   const fetchManagerData = async () => {

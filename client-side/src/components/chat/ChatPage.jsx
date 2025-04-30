@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ChatList from './ChatList';
 import ChatBox from './ChatBox';
 import { ArrowLeft } from 'lucide-react';
+import Navbar from '../common/Navbar';
 
 const ChatPage = ({ setActiveSection, previousSection }) => {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -12,6 +13,7 @@ const ChatPage = ({ setActiveSection, previousSection }) => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-12rem)] overflow-hidden">
+      <Navbar/>
       {/* Back Button */}
       <div className="mb-4">
         <button

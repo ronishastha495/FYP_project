@@ -3,18 +3,20 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 const BookingConfirmation = ({ booking, onClose }) => {
+  console.log('Booking Confirmation:', booking); // Debugging: Check booking data
   if (!booking) {
     toast.error('No booking data available');
     return null;
   }
 
   const formatDateTime = () => {
-    if (!booking.date || !booking.time) return 'N/A';
-    const date = new Date(booking.date);
-    const [hours, minutes] = booking.time.split(':');
+    if (!booking?.data?.date || !booking?.data?.time) return 'N/A';
+    const date = new Date(booking.data.date);
+    const [hours, minutes] = booking.data.time.split(':');
     date.setHours(parseInt(hours), parseInt(minutes));
     return date.toLocaleString();
   };
+  
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
@@ -38,18 +40,16 @@ const BookingConfirmation = ({ booking, onClose }) => {
         <div className="bg-gray-50 p-4 rounded-lg mb-6">
           <h3 className="font-semibold text-lg mb-3">Booking Details</h3>
           <div className="space-y-2">
-            <p>
-              <span className="font-medium">Booking ID:</span> {booking.booking_id || 'N/A'}
-            </p>
+            
             <p>
               <span className="font-medium">Type:</span>{' '}
-              {booking.type === 'Vehicle Service Booking' ? 'Vehicle Servicing' : 'Vehicle Purchase Inquiry'}
+              {booking?.data?.type === 'Vehicle Service Booking' ? 'Vehicle Servicing' : 'Vehicle Purchase Inquiry'}
             </p>
             <p>
               <span className="font-medium">Vehicle:</span>{' '}
               {booking.vehicle
-                ? `${booking.vehicle.make || 'N/A'} ${booking.vehicle.model || ''} ${
-                    booking.vehicle.year ? `(${booking.vehicle.year})` : ''
+                ? `${booking?.data?.vehicle.make || 'N/A'} ${booking?.data?.vehicle.model || ''} ${
+                    booking?.data?.vehicle.year ? `(${booking?.data?.vehicle.year})` : ''
                   }`
                 : 'N/A'}
             </p>
@@ -60,30 +60,30 @@ const BookingConfirmation = ({ booking, onClose }) => {
               <span className="font-medium">Status:</span>{' '}
               <span
                 className={`px-2 py-1 rounded-full text-xs ${
-                  booking.status === 'pending'
+                  booking.data?.status === 'pending'
                     ? 'bg-yellow-100 text-yellow-800'
-                    : booking.status === 'confirmed'
+                    : booking.data.status === 'confirmed'
                     ? 'bg-blue-100 text-blue-800'
-                    : booking.status === 'cancelled'
+                    : booking.data.status === 'cancelled'
                     ? 'bg-red-100 text-red-800'
                     : 'bg-green-100 text-green-800'
                 }`}
               >
-                {(booking.status || 'pending').charAt(0).toUpperCase() +
-                  (booking.status || 'pending').slice(1)}
+                {(booking.data.status || 'pending').charAt(0).toUpperCase() +
+                  (booking.data.status || 'pending').slice(1)}
               </span>
             </p>
-            {booking.type === 'Vehicle Service Booking' && (
+            {booking.data.type === 'Vehicle Service Booking' && (
               <p>
-                <span className="font-medium">Service:</span> {booking.service?.name || 'N/A'}
+                <span className="font-medium">Service:</span> {booking.data.service?.name || 'N/A'}
               </p>
             )}
             <p>
-              <span className="font-medium">Total Price:</span> ${booking.total_price || 'N/A'}
+              <span className="font-medium">Total Price:</span> ${booking.data.total_price || 'N/A'}
             </p>
-            {booking.notes && (
+            {booking.data.notes && (
               <p>
-                <span className="font-medium">Notes:</span> {booking.notes}
+                <span className="font-medium">Notes:</span> {booking.data.notes}
               </p>
             )}
           </div>
@@ -91,7 +91,7 @@ const BookingConfirmation = ({ booking, onClose }) => {
 
         <div className="flex justify-between">
           <Link
-            to={`/tracking/${booking.booking_id}`}
+            to={`/tracking/${booking.data.booking_id}`}
             className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600"
           >
             Track Booking

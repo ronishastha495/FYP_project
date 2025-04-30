@@ -14,8 +14,13 @@ urlpatterns = [
     path('token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     
     # Favorites URLs
-    path('services/favourites/', FavoriteListView.as_view(), name='favorite-list'),
-    path('services/favourites/<uuid:pk>/', FavoriteDetailView.as_view(), name='favorite-detail'),
-    path('services/favourites/check/', FavoriteCheckView.as_view(), name='favorite-check'),
-    path('services/favourites/toggle/', FavoriteToggleView.as_view(), name='favorite-toggle'),
+    path('favorites/', FavoriteListView.as_view(), name='favorite_list'),
+    path('favorites/create/', FavoriteCreateView.as_view(), name='favorite_create'),
+    path('favorites/<int:pk>/', FavoriteDetailView.as_view(), name='favorite_detail'),
+    path('favorites/check/', FavoriteCheckView.as_view(), name='favorite_check'),
+    path('favorites/toggle/', FavoriteToggleView.as_view(), name='favorite_toggle'),
+
+        # Missing in your code earlier
+    path('auth/check/', AuthCheckView.as_view(), name='auth_check'),
+
 ]

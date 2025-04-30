@@ -19,15 +19,12 @@ from .views import (
 router = DefaultRouter()
 router.register(r'service-centers', ServiceCenterViewSet, basename='service-centers')
 
-from rest_framework_simplejwt.views import TokenRefreshView
-
 urlpatterns = [
     # Authentication endpoints
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('authenticated/', AuthenticatedCheckView.as_view(), name='auth-check'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
     # User profile endpoint
     path('user/profile/', UserProfileView.as_view(), name='user-profile'),

@@ -18,7 +18,7 @@ const Register = () => {
     address: '',
     city: '',
     country: '',
-    profile_picture: null
+    profile_picture: null,
   });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -26,15 +26,15 @@ const Register = () => {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: files ? files[0] : value
+      [name]: files ? files[0] : value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Client-side validation
     if (!formData.role) {
       toast.error('Please select a role');
@@ -52,14 +52,27 @@ const Register = () => {
     }
 
     if (!/^\d{10}$/.test(formData.phone_number)) {
-      toast.error('Phone number must be 10 digits');
+      toast.error('Phone number must be exactly 10 digits');
+      return;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    // Username length validation
+    if (formData.username.length < 3) {
+      toast.error('Username must be at least 3 characters');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await register_user(
+      const response = await register_user(
         formData.username,
         formData.email,
         formData.password,
@@ -71,26 +84,25 @@ const Register = () => {
         formData.country,
         formData.profile_picture
       );
-      
+      console.log('Registration response:', response);
       toast.success('Registration successful! Redirecting to login...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (error) {
       console.error('Registration error:', error);
-      
-      if (error.response?.data) {
-        if (typeof error.response.data === 'object') {
-          for (const [field, errors] of Object.entries(error.response.data)) {
-            if (Array.isArray(errors)) {
-              errors.forEach(err => toast.error(`${field}: ${err}`));
-            } else {
-              toast.error(`${field}: ${errors}`);
-            }
+
+      // Handle specific backend errors
+      if (error && typeof error === 'object') {
+        // Handle field-specific errors (e.g., { username: ["A user with that username already exists."] })
+        for (const [field, errors] of Object.entries(error)) {
+          if (Array.isArray(errors)) {
+            errors.forEach((err) => toast.error(`${field}: ${err}`));
+          } else {
+            toast.error(`${field}: ${errors}`);
           }
-        } else {
-          toast.error(error.response.data);
         }
-      } else if (error.message) {
-        toast.error(error.message);
+      } else if (error.detail) {
+        // Handle generic error messages
+        toast.error(error.detail);
       } else {
         toast.error('Registration failed. Please try again.');
       }
@@ -160,7 +172,7 @@ const Register = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                 required
               >
-                  <option value="">Select a role</option>
+                <option value="">Select a role</option>
                 <option value="customer">Customer</option>
                 <option value="service_manager">Service Manager</option>
               </select>
@@ -296,7 +308,6 @@ const Register = () => {
               />
             </div>
 
-            
             <button
               type="submit"
               disabled={isLoading}
@@ -309,13 +320,31 @@ const Register = () => {
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Registering...
                 </span>
-              ) : 'Register'}
+              ) : (
+                'Register'
+              )}
             </button>
           </form>
 
